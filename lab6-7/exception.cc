@@ -48,60 +48,32 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-
-void ExceptionHandler(ExceptionType which)
+void
+ExceptionHandler(ExceptionType which)
 {
-    int type = machine->ReadRegister(2);
-    int val;
-    int status, exit, threadID, programID;
-    printf("Received Exception :%d, type: %s\n", which, type);
-//    DEBUG('d', "Received Exception " << which << " ,type: " << type << "\n");
-    switch (which) {
-        case SyscallException:
-            switch(type) {
-                case SC_PrintInt:
-                    DEBUG('d', "PrintInt\n"); // 使用Debug mode
-                    val = machine->ReadRegister(4); //将MIPS machine存的参数取出来
-                    interrupt->PrintInt(val);  //执行内核的system call
-                    {//以下将Program counter+4，否則会一直执行instruction
-                        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-                        machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-                        machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
-                    }
-                    return;
+    int type = machine->ReadRegister(2), i;
 
-                case SC_Halt:
-                    DEBUG('a', "Shutdown, initiated by user program.\n");
-                    interrupt->Halt();
-
-                case SC_Exit:
-                    DEBUG('d', "Program exit\n");
-                    val=machine->ReadRegister(4);
-                    printf("return value:%d", val);
-                    currentThread->Finish();
-                    break;
-
-                case SC_Exec:
-                    int FilePathMaxLen = 100;
-                    char filepath[FilePathMaxLen];
-                    int fileaddr = machine->ReadRegister(4);
-                    int i;
-                    for (i = 0; filepath[i] != '\0'; i++){
-                        if(!machine->ReadMem(fileaddr+4*i,4,(int*)(filepath+4*i)))
-                            break;
-                    }
-//		            DEBUG('a',"Thread %d Exec: file: %s\n", which, filepath);
-                    printf("Thread %d Exec: file: %s\n", which, filepath);
-                    extern void StartProcess(char *filename);
-                    StartProcess(filepath);
-                    break;
-//                default:
-//                    printf("Unexpected system call :%d", type);
-//                    break;
-            }
-            break;
-//        default:
-//            printf("Unexpected user mode exception");
-//            break;
+    if ((which == SyscallException) && (type == SC_Halt)) {
+	DEBUG('a', "Shutdown, initiated by user program.\n");
+   	interrupt->Halt();
+	}else if((which == SyscallException) && (type == SC_Exec)){
+		int FilePathMaxLen = 100;
+		char filepath[FilePathMaxLen];
+		int fileaddr = machine->ReadRegister(4);
+		for (i = 0; filepath[i] != '\0'; i++){
+			if(!machine->ReadMem(fileaddr+4*i,4,(int*)(filepath+4*i)))
+				break;
+		}
+//		DEBUG('a',"Thread %d Exec: file: %s\n", which, filepath);
+		printf("Thread %d Exec: file: %s\n", which, filepath);
+		extern void StartProcess(char *filename);
+		StartProcess(filepath);
+	}else if((which == SyscallException) && (type == SC_Exit)){
+		int ExitCode = machine->ReadRegister(4);
+		Exit(ExitCode);
+	}
+	else {
+		printf("Unexpected user mode exception %d %d\n", which, type);
+		ASSERT(FALSE);
     }
 }
