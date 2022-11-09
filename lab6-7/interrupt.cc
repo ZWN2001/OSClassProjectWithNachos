@@ -245,6 +245,35 @@ Interrupt::Halt()
     Cleanup();     // Never returns.
 }
 
+void Interrupt::PrintInt(int n)
+{
+    printf("PrintInt:%d",n);
+//    int m=0;
+//    int sign=0;
+//    char temp[64];
+//    int i=0;
+//    if(n<0){
+//        sign=1;
+//        n=-n;//n ~=n - 1
+//    }
+//    if(n==0)
+//        sign=2;
+//    while(n>0){
+//        temp[i++]=n%10+'0';
+//        n=n/10;
+//    }
+//    if(sign==1)temp[i]='-';
+//    else
+//        i--;
+//    while(i>=0){
+//        synchConsoleOut->PutChar(char(temp[i]));
+//        i--;
+//    }
+//    if(sign==2)
+//        synchConsoleOut->PutChar(char('0'));
+//    synchConsoleOut->PutChar(char('\n'));
+}
+
 //----------------------------------------------------------------------
 // Interrupt::Schedule
 // 	Arrange for the CPU to be interrupted when simulated time
