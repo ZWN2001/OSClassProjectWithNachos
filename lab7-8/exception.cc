@@ -51,27 +51,21 @@
 
 void ExceptionHandler(ExceptionType which)
 {
-    int type = kernel->machine->ReadRegister(2);
+    int type = machine->ReadRegister(2);
     int val;
     int status, exit, threadID, programID;
-    DEBUG(dbgSys, "Received Exception " << which << " type: " << type << "\n");
+    DEBUG(dbgSys, "Received Exception " << which << " ,type: " << type << "\n");
     switch (which) {
         case SyscallException:
             switch(type) {
                 case SC_PrintInt:
                     DEBUG(dbgSys, "PrintInt\n"); // 使用Debug mode
                     val = kernel->machine->ReadRegister(4); //将MIPS machine存的参数取出来
-                    interrupt->PrintInt(n);
-//                    kernel->interrupt->PrintInt(n);      //执行内核的system call，
+                    interrupt->PrintInt(n);  //执行内核的system call，
                     {//以下将Program counter+4，否則会一直执行instruction
-                        // set previous programm counter (debugging only)
-                        kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
-
-                        // set programm counter to next instruction (all Instructions are 4 byte wide)
-                        kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
-
-                        // set next programm counter for brach execution
-                        kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg)+4);
+                        machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+                        machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                        machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg)+4);
                     }
                     return;
 
