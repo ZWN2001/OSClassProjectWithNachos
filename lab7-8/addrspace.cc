@@ -18,12 +18,11 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
-#include "filesys.h"
 #include "noff.h"
-#include "../userprog/bitmap.h"
-#ifdef HOST_SPARC
-#include <strings.h>
-#endif
+#include "bitmap.h"
+
+static BitMap *pageMap = new BitMap(NumPhysPages);
+
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -50,8 +49,6 @@ SwapHeader (NoffHeader *noffH)
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
-//	Load the program from a file "executable", and set everything
-//	up so that we can start executing user instructions.
 //
 //	Assumes that the object code file is in NOFF format.
 //
@@ -65,7 +62,7 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(OpenFile *executable)
 {
     NoffHeader noffH;
-    unsigned int i, size;
+    unsigned int i, size, j;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) && 
@@ -80,108 +77,97 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-//	printf("numPages:%d\n", numPages);
-#ifndef VM
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
-#endif
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
-   
+
+	if(numPages > pageMap->NumClear()){
+		printf("Not enough pages in pageMap.");
+		return;
+	}
+	ASSERT(numPages <= (unsigned int) pageMap->NumClear());
+
+
+// first, set up the translation 
+    pageTable = new TranslationEntry[numPages];
+    for (i = 0; i < numPages; i++) {
+		pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+		pageTable[i].physicalPage = pageMap->Find();	//use pageMap to manage 
+		pageTable[i].valid = TRUE;
+		pageTable[i].use = FALSE;
+		pageTable[i].dirty = FALSE;
+		pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
+						// a separate page, we could set its 
+						// pages to be read-only
+    }
+    
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-	SwapBuffer = new char[size];
-	memset(SwapBuffer, 0, size);
+//    bzero(machine->mainMemory, size);		//should not use bzero to set from head
+	for (i = 0; i < numPages; i++){
+		for (j = 0; j < PageSize; j++)
+			machine->mainMemory[ pageTable[i].physicalPage * PageSize + j ] = 0;
+	}
+
+	RestoreState();	//store the addrspace in order to translate virtAddr
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(SwapBuffer[noffH.code.virtualAddr]),
+		int phyAddr;
+		machine->Translate(noffH.code.virtualAddr, &phyAddr, 4, TRUE);
+        executable->ReadAt(&(machine->mainMemory[phyAddr]),	//may out of bound
 			noffH.code.size, noffH.code.inFileAddr);
     }
     if (noffH.initData.size > 0) {
         DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(SwapBuffer[noffH.initData.virtualAddr]),
+		int phyAddr;
+		machine->Translate(noffH.initData.virtualAddr, &phyAddr, 4, TRUE);
+        executable->ReadAt(&(machine->mainMemory[phyAddr]),	//may out of bound
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
 
-
-#ifdef VM
-    if (numPages <= virtualMemoryMap -> NumClear())
-    {
-	    pageTable = new TranslationEntry[numPages];
-    	for (int i = 0; i < numPages; ++ i)
-	{
-		pageTable[i].virtualPage = virtualMemoryMap -> Find();
-		pageTable[i].physicalPage= -1;//physicalMemoryMap -> Find();
-		pageTable[i].valid = FALSE;
-		pageTable[i].use = FALSE;
-		pageTable[i].dirty = FALSE;
-		pageTable[i].readOnly = FALSE;
-	
-		char testin[128];
-		for (int j = 0; j < 128; ++ j)
-		{
-			testin[j] = SwapBuffer[i * 128 + j];
-		}
-		int result = 	fileSystem ->  SwapFile ->WriteAt(testin, 128, pageTable[i].virtualPage * 128);
-
-		char teststring[128];
-		
-//		memcpy(&(machine -> mainMemory[pageTable[i].physicalPage * 128]), &(SwapBuffer[i * 128]), 128);
-		DEBUG('V', "VM STORE. VIRTUAL PAGE = %d.\n", pageTable[i].virtualPage);
-	}
-    }
-    else 
-    {
-    	ASSERT(false);
-    }
+}
 
 
-#else
-// first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
-    for (i = 0; i < numPages; i++) {
-	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
-	pageTable[i].valid = TRUE;
-	pageTable[i].use = FALSE;
-	pageTable[i].dirty = FALSE;
-	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
-    }
-#endif
- 
+void AddrSpace::setPreAddrSpace(AddrSpace *preSpace)
+{
+	preAddrSpace = preSpace;
+}
+void AddrSpace::setNextAddrSpace(AddrSpace *nextSpace)
+{
+	nextAddrSpace = nextSpace;
 }
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
-// 	Dealloate an address space.  Nothing for now!
+// 	Dealloate an address space and reset the bit map
+//
+// Implemented by Bluefissure.
 //----------------------------------------------------------------------
 
 AddrSpace::~AddrSpace()
 {
-#ifdef VM
-	for (int i = 0; i < numPages; ++ i)
-	{
-		if (pageTable[i].virtualPage != -1)
-		{
-			virtualMemoryMap -> Clear(pageTable[i].virtualPage);
-		}
-		if (pageTable[i].physicalPage != -1)
-		{
-			physicalMemoryMap -> Clear(pageTable[i].physicalPage);	
-		}
+	unsigned int numRegPages, i;
+	for (i = 0; i < numPages; i++){	//reset the bitmap
+		pageMap->Clear(pageTable[i].physicalPage);
 	}
-#endif
-	
-	delete pageTable;
+	delete [] pageTable;
+	if(regPageTable != NULL){
+		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+		for (i = 0; i < numRegPages; i++){	//reset the bitmap
+			pageMap->Clear(regPageTable[i].physicalPage);
+		}
+		delete [] regPageTable;
+	}
+	delete preAddrSpace;
+	delete nextAddrSpace;
 }
 
 //----------------------------------------------------------------------
@@ -220,31 +206,32 @@ AddrSpace::InitRegisters()
 // AddrSpace::SaveState
 // 	On a context switch, save any machine state, specific
 //	to this address space, that needs saving.
-//
-//	For now, nothing!
+//	numPagesReg -- number of pages to store registers
+// Implemented by Bluefissure.
 //----------------------------------------------------------------------
 
-void AddrSpace::SaveState() 
+void AddrSpace::SaveState() //Save register to memory and save memory
 {
-
-	for (int i = 0; i < TLBSize; ++ i)
-	{
-		for (int j = 0; j < machine -> pageTableSize; ++ j)
-		{
-			if (machine -> tlb[i].valid && machine -> tlb[i].physicalPage == pageTable[j].physicalPage)	
-			{
-				pageTable[j].virtualPage = machine -> tlb[i].virtualPage;
-				pageTable[j].use = machine -> tlb[i].use;
-				pageTable[j].dirty = machine -> tlb[i].dirty;
-				pageTable[j].readOnly = machine -> tlb[i].readOnly;
-				break;
-			}
-		
-		}
-	
-	
+	unsigned int numRegPages, i, j, offset;
+	numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+	regPageTable = new TranslationEntry[numRegPages];
+    for (i = 0; i < numRegPages; i++) {
+		regPageTable[i].virtualPage = i;
+		regPageTable[i].physicalPage = pageMap->Find();
+		regPageTable[i].valid = TRUE;
+		regPageTable[i].use = FALSE;
+		regPageTable[i].dirty = FALSE;
+		regPageTable[i].readOnly = FALSE;  
 	}
-
+    machine->pageTable = regPageTable;
+    machine->pageTableSize = numRegPages;
+	for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
+		if(offset >= PageSize){
+			offset %= PageSize;
+			j++;
+		}
+		machine->WriteMem(j * PageSize + offset, 4, machine->registers[i]);
+	}
 }
 
 //----------------------------------------------------------------------
@@ -252,11 +239,46 @@ void AddrSpace::SaveState()
 // 	On a context switch, restore the machine state so that
 //	this address space can run.
 //
-//      For now, tell the machine where to find the page table.
+//	Restore the registers stored in memery 
+//		and tell machine to find current pagetable
+// Implemented by Bluefissure.
 //----------------------------------------------------------------------
 
 void AddrSpace::RestoreState() 
 {
+	unsigned int numRegPages, i, j, offset;
+	if(regPageTable != NULL){
+		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+		machine->pageTable = regPageTable;
+		machine->pageTableSize = numRegPages;
+		for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
+			if(offset >= PageSize){
+				offset %= PageSize;
+				j++;
+			}
+			int tmpRegValue;
+			machine->ReadMem(j * PageSize + offset, 4, &tmpRegValue);
+			machine->WriteRegister(i, tmpRegValue);
+		}
+
+	}
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+//----------------------------------------------------------------------
+// AddrSpace::Print
+//  Page tables dumping 
+// Implemented by Bluefissure
+//----------------------------------------------------------------------
+
+void AddrSpace::Print() 
+{
+	printf("page table dump: %d pages in total\n", numPages);
+	printf("============================================\n");
+	printf("\tVirtPage, \tPhysPage\n");
+	for (int i=0; i < numPages; i++) {
+		printf("\t%d, \t\t%d\n", pageTable[i].virtualPage, pageTable[i].physicalPage);
+	}
+	printf("============================================\n\n");
 }

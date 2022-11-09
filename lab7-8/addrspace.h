@@ -31,12 +31,23 @@ class AddrSpace {
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
 
-  public:
+	void Print();	//page table dumping
+
+	void setPreAddrSpace(AddrSpace *preAddrSpace);		// Set pre addrspace
+	void setNextAddrSpace(AddrSpace *nextAddrSpace);	// Set next addrspace
+	AddrSpace* PreAddrSpace(){	// Get pre addrspace
+		return preAddrSpace;
+	};		
+	AddrSpace* NextAddrSpace(){	// Get next addrspace
+		return nextAddrSpace;
+	}		
+
+  private:
     TranslationEntry *pageTable;	// Assume linear page table translation
-					// for now!
+	TranslationEntry *regPageTable;	// Pagetable to store the registers
+	AddrSpace *preAddrSpace,*nextAddrSpace;	// Linked list
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-	char * SwapBuffer;
 };
 
 #endif // ADDRSPACE_H

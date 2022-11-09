@@ -13,7 +13,6 @@
 #include "console.h"
 #include "addrspace.h"
 #include "synch.h"
-#include "synchConsole.h"
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -31,13 +30,20 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable);    
+
+	space = new AddrSpace(executable);  
+	//Store previous addrspace, no need of spaceId using linkedlist struct  
+	if (currentThread->space != NULL){	
+		currentThread->space->SaveState();
+		space->setPreAddrSpace(currentThread->space);
+	}
     currentThread->space = space;
 
     delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
+	space->Print();
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
@@ -57,8 +63,8 @@ static Semaphore *writeDone;
 // 	Wake up the thread that requested the I/O.
 //----------------------------------------------------------------------
 
-static void ReadAvail(int arg) { readAvail->V(); }
-static void WriteDone(int arg) { writeDone->V(); }
+static void ReadAvail(_int arg) { readAvail->V(); }
+static void WriteDone(_int arg) { writeDone->V(); }
 
 //----------------------------------------------------------------------
 // ConsoleTest
@@ -82,22 +88,4 @@ ConsoleTest (char *in, char *out)
 	writeDone->P() ;        // wait for write to finish
 	if (ch == 'q') return;  // if q, quit
     }
-}
-void
-SynchConsoleTest(char * in, char * out)
-{
-	char ch;
-
-	printf("\nWELCOME TO LIHAO'S CONSOLE\n");
-	SynchConsole *synchConsole = new SynchConsole();
-
-	while (true)
-	{
-		ch = synchConsole -> GetChar();
-		synchConsole -> PutChar(ch);
-		if (ch == 'q')
-			return ;
-	}
-
-
 }
