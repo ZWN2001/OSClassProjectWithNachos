@@ -29,6 +29,7 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
+#define SC_PrintInt 11
 
 #ifndef IN_ASM
 
@@ -43,8 +44,10 @@
  */
 
 /* Stop Nachos, and print out performance stats */
-void Halt();		
- 
+void Halt();
+
+/*PrintINt*/
+void PrintInt(int integer);
 
 /* Address space control operations: Exit, Exec, and Join */
 

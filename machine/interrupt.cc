@@ -166,8 +166,8 @@ Interrupt::OneTick()
     ChangeLevel(IntOn, IntOff);		// first, turn off interrupts
 					// (interrupt handlers run with
 					// interrupts disabled)
-    while (CheckIfDue(FALSE))		// check for pending interrupts
-	;
+    while (CheckIfDue(FALSE));		// check for pending interrupts
+
     ChangeLevel(IntOff, IntOn);		// re-enable interrupts
     if (yieldOnReturn) {		// if the timer device handler asked 
 					// for a context switch, ok to do it now
@@ -243,6 +243,41 @@ Interrupt::Halt()
     printf("Machine halting!\n\n");
     stats->Print();
     Cleanup();     // Never returns.
+}
+
+void Interrupt::PrintInt(int n)
+{
+    int m=0;
+    int sign=0;
+    char temp[64];
+    int i=0;
+    if(n<0){
+        sign=1;
+        n=-n;//n ~=n - 1
+    }
+    if(n==0)
+        sign=2;
+    while(n>0){
+        //kernel->machine->WriteMem(int(temp+i),1,(int)(n%10+'0'));
+        //i++;
+        temp[i++]=n%10+'0';
+        n=n/10;
+    }
+    if(sign==1)temp[i]='-';
+    else
+        i--;
+    //s[i]='\0';
+//    int add=(int)temp;
+    while(i>=0){
+        //kernel->machine->ReadMem(int(add+i),1,&m);
+        //kernel->synchConsoleOut->SynchConsoleOutput(NULL);
+        //kernel->synchConsoleOut->PutChar(char(m));
+        kernel->synchConsoleOut->PutChar(char(temp[i]));
+        i--;
+    }
+    if(sign==2)
+        kernel->synchConsoleOut->PutChar(char('0'));
+    kernel->synchConsoleOut->PutChar(char('\n'));
 }
 
 //----------------------------------------------------------------------

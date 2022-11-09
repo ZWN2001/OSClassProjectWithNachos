@@ -11,9 +11,13 @@
 //		(if you haven't implemented the file system yet, you
 //		don't need to do this last step)
 //
-// Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
-// of liability and disclaimer of warranty provisions.
+///管理地址空间的例程(执行用户程序)。
+///要运行用户程序，必须:
+///1. 使用 -N-T 0 选项链接
+///2. 运行 Coff2noff 将目标文件转换为 Nachos 格式
+///(Nachos 对象代码格式实际上只是 UNIX 可执行对象代码格式的简单版本)
+///3. 将 NOFF 文件加载到 Nachos 文件系统中
+///(如果还没有实现文件系统，则不需要执行最后一步)
 
 #include "copyright.h"
 #include "system.h"
@@ -22,14 +26,14 @@
 
 //----------------------------------------------------------------------
 // SwapHeader
-// 	Do little endian to big endian conversion on the bytes in the 
+// 	Do little endian to big endian conversion on the bytes in the
 //	object file header, in case the file was generated on a little
 //	endian machine, and we're now running on a big endian machine.
+///对对象文件头中的字节执行从 little endian 到 big endian 转换，
+/// 以防文件是在 little endian 机器上生成的，而在 big endian 机器上运行。
 //----------------------------------------------------------------------
 
-static void 
-SwapHeader (NoffHeader *noffH)
-{
+static void SwapHeader (NoffHeader *noffH){
 	noffH->noffMagic = WordToHost(noffH->noffMagic);
 	noffH->code.size = WordToHost(noffH->code.size);
 	noffH->code.virtualAddr = WordToHost(noffH->code.virtualAddr);
@@ -50,16 +54,22 @@ SwapHeader (NoffHeader *noffH)
 //
 //	Assumes that the object code file is in NOFF format.
 //
-//	First, set up the translation from program memory to physical 
+//	First, set up the translation from program memory to physical
 //	memory.  For now, this is really simple (1:1), since we are
 //	only uniprogramming, and we have a single unsegmented page table
 //
 //	"executable" is the file containing the object code to load into memory
+
+///创建地址空间以运行用户程序。
+///从一个可执行文件中加载程序，并进行设置，以便我们可以开始执行用户指令。
+///假定目标代码文件为 NOFF 格式。
+///首先，设置从程序存储器到物理存储器的转换。现在，这真的很简单(1:1) ，
+/// 因为我们只是单一编程，我们有一个单一的未分段的页表。
+///“可执行文件”是包含要加载到内存中的目标代码的文件
 //----------------------------------------------------------------------
 
-AddrSpace::AddrSpace(OpenFile *executable)
-{
-    NoffHeader noffH;
+AddrSpace::AddrSpace(OpenFile *executable){
+    NoffHe ader noffH;
     unsigned int i, size;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
@@ -82,24 +92,31 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
-// first, set up the translation 
+// first, set up the translation
+///当构造一个地址空间时，将设置一个页表，并将整个机器内存归零
     pageTable = new TranslationEntry[numPages];
+    ///pageTable[i].physicalPage = i;
+    /// 说明物理帧的分配总是循环变量i的值。可以想象，当两个程序同时驻留内
+    ///存时后一个程序会装入到前一个程序的物理地址中，从而将先前已装入的程序覆盖。
+    ///可见基本的Nachos并不具有多个程序同时驻留内存的功能。
+    ///为了实现多个程序同时驻留内存的功能需要我们改进Nachos的内存分配算法的设计。
+    /// 一个比较简单的设计就是利用Nachos在../userprog/bitmap.h中文件定义的Bitmap类。
+    /// 利用bitmap记录和申请内存物理帧，使不同的程序装入到不同的物理空间中去。
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 	pageTable[i].physicalPage = i;
 	pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
-	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
+	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on a separate page, we could set its pages to be read-only
     }
     
-// zero out the entire address space, to zero the unitialized data segment 
-// and the stack segment
+// zero out the entire address space, to zero the unitialized data segment and the stack segment
+///整个地址空间全部归零，也就是单道程序设计，虚拟空间和物理空间之间的映射是线性的
     bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
+///在创建地址空间之后，程序(可执行文件)被加载到空间中。此处使用noff文件
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
@@ -135,8 +152,11 @@ AddrSpace::~AddrSpace()
 //	when this thread is context switched out.
 //----------------------------------------------------------------------
 
-void
-AddrSpace::InitRegisters()
+///此函数设置用户级寄存器的初始值。(machine/machine.*共定义了40个寄存器)
+/// 我们把直接写入寄存器，这样我们就可以立即跳转到用户代码。
+/// 具体来说，程序计数器寄存器 PCReg 被初始化为0。
+/// 请注意，当线程被切换出来时，这些将被保存/恢复到 currentThread-> userRegister 中。
+void AddrSpace::InitRegisters()
 {
     int i;
 

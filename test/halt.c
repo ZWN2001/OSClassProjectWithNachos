@@ -11,10 +11,10 @@
  */
 
 #include "syscall.h"
-
+static int a[40];
 int
 main()
 {
     Halt();
-    /* not reached */
+/* not reached */
 }

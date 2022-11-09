@@ -41,6 +41,14 @@ __start:
  * 	convention on the MIPS.
  * -------------------------------------------------------------
  */
+    .globl PrintInt
+    .ent PrintInt
+PrintInt:
+    addiu $2, $0,SC_PrintInt ///将刚刚define的SC_PrintInt放到register2
+    syscall                  ///MIPS machine会将参数存放到register4,5,6,7
+    j       $31              ///执行system call
+    .end PrintInt
+
 
 	.globl Halt
 	.ent	Halt

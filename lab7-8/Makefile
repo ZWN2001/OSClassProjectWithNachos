@@ -19,8 +19,8 @@ endef
 
 include ../threads/Makefile.local
 # include ../filesys/Makefile.local
-include ../lab7/Makefile.local
-
+include ../lab7-8/Makefile.local
+include ../Makefile.dep
 include ../Makefile.common
 
 endif # MAKEFILE_USERPROG
