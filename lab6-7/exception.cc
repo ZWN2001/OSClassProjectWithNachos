@@ -50,7 +50,6 @@
 void StartProcess(int spaceId){
     currentThread->space->InitRegisters();
     currentThread->space->RestoreState();
-    currentThread->space->Print();
     machine->Run();
     ASSERT(FALSE);
 }
@@ -81,6 +80,7 @@ void ExceptionHandler(ExceptionType which) {
         Thread *thread = new Thread(filepath);
         // 将用户进程映射到核心线程上
         thread->space = space;
+        space->Print();
         thread->Fork(StartProcess,(int)space->getSpaceId());
         machine->WriteRegister(2,space->getSpaceId());
         {
