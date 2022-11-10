@@ -33,10 +33,10 @@ StartProcess(char *filename)
 
 	space = new AddrSpace(executable);  
 	//Store previous addrspace, no need of spaceId using linkedlist struct  
-	if (currentThread->space != NULL){	
-		currentThread->space->SaveState();
-		space->setPreAddrSpace(currentThread->space);
-	}
+//	if (currentThread->space != NULL){
+//		currentThread->space->SaveState();
+//		space->setPreAddrSpace(currentThread->space);
+//	}
     currentThread->space = space;
 
     delete executable;			// close file

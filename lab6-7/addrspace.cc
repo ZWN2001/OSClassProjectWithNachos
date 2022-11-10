@@ -136,14 +136,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
 }
 
 
-void AddrSpace::setPreAddrSpace(AddrSpace *preSpace)
-{
-	preAddrSpace = preSpace;
-}
-void AddrSpace::setNextAddrSpace(AddrSpace *nextSpace)
-{
-	nextAddrSpace = nextSpace;
-}
+//void AddrSpace::setPreAddrSpace(AddrSpace *preSpace)
+//{
+//	preAddrSpace = preSpace;
+//}
+//void AddrSpace::setNextAddrSpace(AddrSpace *nextSpace)
+//{
+//	nextAddrSpace = nextSpace;
+//}
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
@@ -159,15 +159,15 @@ AddrSpace::~AddrSpace()
 		pageMap->Clear(pageTable[i].physicalPage);
 	}
 	delete [] pageTable;
-	if(regPageTable != NULL){
-		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
-		for (i = 0; i < numRegPages; i++){	//reset the bitmap
-			pageMap->Clear(regPageTable[i].physicalPage);
-		}
-		delete [] regPageTable;
-	}
-	delete preAddrSpace;
-	delete nextAddrSpace;
+//	if(regPageTable != NULL){
+//		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+//		for (i = 0; i < numRegPages; i++){	//reset the bitmap
+//			pageMap->Clear(regPageTable[i].physicalPage);
+//		}
+//		delete [] regPageTable;
+//	}
+//	delete preAddrSpace;
+//	delete nextAddrSpace;
 }
 
 //----------------------------------------------------------------------
@@ -212,26 +212,26 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() //Save register to memory and save memory
 {
-	unsigned int numRegPages, i, j, offset;
-	numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
-	regPageTable = new TranslationEntry[numRegPages];
-    for (i = 0; i < numRegPages; i++) {
-		regPageTable[i].virtualPage = i;
-		regPageTable[i].physicalPage = pageMap->Find();
-		regPageTable[i].valid = TRUE;
-		regPageTable[i].use = FALSE;
-		regPageTable[i].dirty = FALSE;
-		regPageTable[i].readOnly = FALSE;  
-	}
-    machine->pageTable = regPageTable;
-    machine->pageTableSize = numRegPages;
-	for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
-		if(offset >= PageSize){
-			offset %= PageSize;
-			j++;
-		}
-		machine->WriteMem(j * PageSize + offset, 4, machine->registers[i]);
-	}
+//	unsigned int numRegPages, i, j, offset;
+//	numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+//	regPageTable = new TranslationEntry[numRegPages];
+//    for (i = 0; i < numRegPages; i++) {
+//		regPageTable[i].virtualPage = i;
+//		regPageTable[i].physicalPage = pageMap->Find();
+//		regPageTable[i].valid = TRUE;
+//		regPageTable[i].use = FALSE;
+//		regPageTable[i].dirty = FALSE;
+//		regPageTable[i].readOnly = FALSE;
+//	}
+//    machine->pageTable = regPageTable;
+//    machine->pageTableSize = numRegPages;
+//	for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
+//		if(offset >= PageSize){
+//			offset %= PageSize;
+//			j++;
+//		}
+//		machine->WriteMem(j * PageSize + offset, 4, machine->registers[i]);
+//	}
 }
 
 //----------------------------------------------------------------------
@@ -246,22 +246,22 @@ void AddrSpace::SaveState() //Save register to memory and save memory
 
 void AddrSpace::RestoreState() 
 {
-	unsigned int numRegPages, i, j, offset;
-	if(regPageTable != NULL){
-		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
-		machine->pageTable = regPageTable;
-		machine->pageTableSize = numRegPages;
-		for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
-			if(offset >= PageSize){
-				offset %= PageSize;
-				j++;
-			}
-			int tmpRegValue;
-			machine->ReadMem(j * PageSize + offset, 4, &tmpRegValue);
-			machine->WriteRegister(i, tmpRegValue);
-		}
-
-	}
+//	unsigned int numRegPages, i, j, offset;
+//	if(regPageTable != NULL){
+//		numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
+//		machine->pageTable = regPageTable;
+//		machine->pageTableSize = numRegPages;
+//		for (i = 0, j = 0, offset = 0; i < NumTotalRegs; i++, offset += 4){
+//			if(offset >= PageSize){
+//				offset %= PageSize;
+//				j++;
+//			}
+//			int tmpRegValue;
+//			machine->ReadMem(j * PageSize + offset, 4, &tmpRegValue);
+//			machine->WriteRegister(i, tmpRegValue);
+//		}
+//
+//	}
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }
