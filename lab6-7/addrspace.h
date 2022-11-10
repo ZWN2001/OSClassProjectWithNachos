@@ -32,6 +32,7 @@ class AddrSpace {
     void RestoreState();		// info on a context switch 
 
 	void Print();	//page table dumping
+    unsigned int getSpaceId() { return spaceId; }
 
 //	void setPreAddrSpace(AddrSpace *preAddrSpace);		// Set pre addrspace
 //	void setNextAddrSpace(AddrSpace *nextAddrSpace);	// Set next addrspace
@@ -46,7 +47,7 @@ class AddrSpace {
     TranslationEntry *pageTable;	// Assume linear page table translation
 //	TranslationEntry *regPageTable;	// Pagetable to store the registers
 //	AddrSpace *preAddrSpace,*nextAddrSpace;	// Linked list
-    unsigned int numPages;		// Number of pages in the virtual 
+    unsigned int numPages, spaceId;		// Number of pages in the virtual
 					// address space
 };
 

@@ -22,6 +22,7 @@
 #include "bitmap.h"
 
 static BitMap *pageMap = new BitMap(NumPhysPages);
+static BitMap *pidMap = new BitMap(NumPhysPages);
 
 
 //----------------------------------------------------------------------
@@ -91,7 +92,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	}
 	ASSERT(numPages <= (unsigned int) pageMap->NumClear());
 
-
+    spaceId = pidMap->Find()+100;
 // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
@@ -154,7 +155,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 AddrSpace::~AddrSpace()
 {
-	unsigned int numRegPages, i;
+	unsigned int i;
+    pidMap->Clear(spaceId-100);
 	for (i = 0; i < numPages; i++){	//reset the bitmap
 		pageMap->Clear(pageTable[i].physicalPage);
 	}
@@ -212,6 +214,8 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() //Save register to memory and save memory
 {
+    pageTable = machine->pageTable;
+    numPages = machine->pageTableSize;
 //	unsigned int numRegPages, i, j, offset;
 //	numRegPages = divRoundUp(NumTotalRegs * 4, PageSize);
 //	regPageTable = new TranslationEntry[numRegPages];

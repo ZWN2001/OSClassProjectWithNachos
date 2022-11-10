@@ -47,6 +47,13 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
+void StartProcess(int spaceId){
+    currentThread->space->InitRegisters();
+    currentThread->space->RestoreState();
+    currentThread->space->Print();
+    machine->Run();
+    ASSERT(FALSE);
+}
 
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2), i;
@@ -62,10 +69,25 @@ void ExceptionHandler(ExceptionType which) {
             if (!machine->ReadMem(fileaddr + 4 * i, 4, (int *) (filepath + 4 * i)))
                 break;
         }
-//		DEBUG('a',"Thread %d Exec: file: %s\n", which, filepath);
-        printf("Thread %d Exec: file: %s\n", which, filepath);
-        extern void StartProcess(char *filename);
-        StartProcess(filepath);
+        OpenFile *executable = fileSystem->Open(filepath);
+        if(executable == NULL) {
+            printf("Unable to open file %s\n",filepath);
+            return;
+        }
+        // 建立新地址空间
+        AddrSpace *space = new AddrSpace(executable);
+        delete executable;	// 关闭文件
+        // 建立新核心线程
+        Thread *thread = new Thread(filepath);
+        // 将用户进程映射到核心线程上
+        thread->space = space;
+        thread->Fork(StartProcess,(int)space->getSpaceId());
+        machine->WriteRegister(2,space->getSpaceId());
+        {
+            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
+        }
     } else if ((which == SyscallException) && (type == SC_Exit)) {
         int ExitCode = machine->ReadRegister(4);
         Exit(ExitCode);
