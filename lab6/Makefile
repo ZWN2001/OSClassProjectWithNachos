@@ -19,7 +19,7 @@ endef
 
 include ../threads/Makefile.local
 # include ../filesys/Makefile.local
-include ../lab6-7/Makefile.local
+include ../lab6/Makefile.local
 include ../Makefile.dep
 include ../Makefile.common
 
