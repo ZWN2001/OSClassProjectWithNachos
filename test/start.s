@@ -49,6 +49,14 @@ PrintInt:
     j       $31
     .end PrintInt
 
+    .globl PageFault
+    .ent PageFault
+PageFault:
+    addiu $2, $0,SC_Page_Fault
+    syscall
+    j       $31
+    .end PageFault
+
 
 	.globl Halt
 	.ent	Halt
