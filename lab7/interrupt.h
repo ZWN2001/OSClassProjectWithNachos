@@ -88,6 +88,8 @@ public:
 
     void PrintInt(int n);
 
+    void PageFault(int badVAddr);
+
     void Idle(); 			// The ready queue is empty, roll 
     // simulated time forward until the
     // next interrupt

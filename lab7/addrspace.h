@@ -16,39 +16,36 @@
 #include "copyright.h"
 #include "filesys.h"
 
-#define UserStackSize		1024 	// increase this as necessary!
+#define UserStackSize	1024
+#define MaxNumPhysPages  5
 
 class AddrSpace {
   public:
-    AddrSpace(OpenFile *executable);	// Create an address space,
-					// initializing it with the program
-					// stored in the file "executable"
-    ~AddrSpace();			// De-allocate an address space
+    AddrSpace(char *filename);
+    ~AddrSpace();
 
-    void InitRegisters();		// Initialize user-level CPU registers,
-					// before jumping to user code
+    void InitRegisters();
 
-    void SaveState();			// Save/restore address space-specific
-    void RestoreState();		// info on a context switch 
+    void SaveState();
+    void RestoreState();
 
-	void Print();	//page table dumping
+	void Print();
     unsigned int getSpaceId() { return spaceId; }
 
-//	void setPreAddrSpace(AddrSpace *preAddrSpace);		// Set pre addrspace
-//	void setNextAddrSpace(AddrSpace *nextAddrSpace);	// Set next addrspace
-//	AddrSpace* PreAddrSpace(){	// Get pre addrspace
-//		return preAddrSpace;
-//	};
-//	AddrSpace* NextAddrSpace(){	// Get next addrspace
-//		return nextAddrSpace;
-//	}
+    void FIFO(int badVAdrr);
+    void writeBack(int oldPage);
+
 
   private:
-    TranslationEntry *pageTable;	// Assume linear page table translation
-//	TranslationEntry *regPageTable;	// Pagetable to store the registers
-//	AddrSpace *preAddrSpace,*nextAddrSpace;	// Linked list
-    unsigned int numPages, spaceId;		// Number of pages in the virtual
-					// address space
+    TranslationEntry *pageTable;
+    unsigned int numPages, spaceId;
+
+    unsigned int StackPages;
+    char *filename;
+    //for FIFO
+    int virtualMem[NumPhysPages]; //FIFO页顺序存储
+    int pagePointer; //FIFO换出页指针
+
 };
 
-#endif // ADDRSPACE_H
+#endif

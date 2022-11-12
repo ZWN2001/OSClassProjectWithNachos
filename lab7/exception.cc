@@ -56,7 +56,6 @@ void StartProcess(int spaceId){
 
 void ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2), i;
-
     if(which == PageFaultException){
         int badVAddr = machine->ReadRegister(BadVAddrReg);
         interrupt->PageFault(badVAddr);
@@ -65,9 +64,7 @@ void ExceptionHandler(ExceptionType which) {
             machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
             machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
         }
-    }
-
-    if ((which == SyscallException) && (type == SC_Halt)) {
+    } else if ((which == SyscallException) && (type == SC_Halt)) {
         DEBUG('a', "Shutdown, initiated by user program.\n");
         interrupt->Halt();
     } else if ((which == SyscallException) && (type == SC_Exec)) {
@@ -78,14 +75,14 @@ void ExceptionHandler(ExceptionType which) {
             if (!machine->ReadMem(fileaddr + 4 * i, 4, (int *) (filepath + 4 * i)))
                 break;
         }
-        OpenFile *executable = fileSystem->Open(filepath);
-        if(executable == NULL) {
-            printf("Unable to open file %s\n",filepath);
-            return;
-        }
+//        OpenFile *executable = fileSystem->Open(filepath);
+//        if(executable == NULL) {
+//            printf("Unable to open file %s\n",filepath);
+//            return;
+//        }
         // 建立新地址空间
-        AddrSpace *space = new AddrSpace(executable);
-        delete executable;	// 关闭文件
+        AddrSpace *space = new AddrSpace(filepath);
+//        delete executable;	// 关闭文件
         // 建立新核心线程
         Thread *thread = new Thread(filepath);
         // 将用户进程映射到核心线程上
@@ -111,6 +108,7 @@ void ExceptionHandler(ExceptionType which) {
         }
     } else {
         printf("Unexpected user mode exception %d %d\n", which, type);
+        interrupt->Halt();
         ASSERT(FALSE);
     }
 }

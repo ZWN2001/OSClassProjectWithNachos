@@ -1,3 +1,3 @@
 make clean
 make
-./nachos -x ../test/exec.noff
+./nachos -x ../test/sort.noff

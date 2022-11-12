@@ -252,11 +252,11 @@ void Interrupt::PrintInt(int n)
     printf("==================================\n");
 }
 
-void Interrupt::PrintInt(int BadVAddr)
+void Interrupt::PageFault(int BadVAddr)
 {
     AddrSpace *space = currentThread->space;
     //调用FIFO函数实现页的置换
-    space->FIFO(badVAddr);
+    space->FIFO(BadVAddr);
 }
 
 //----------------------------------------------------------------------
