@@ -26,7 +26,7 @@
 //	object file header, in case the file was generated on a little
 //	endian machine, and we're now running on a big endian machine.
 //----------------------------------------------------------------------
-
+static BitMap *pidMap = new BitMap(NumPhysPages);
 static void
 SwapHeader(NoffHeader *noffH)
 {
@@ -81,6 +81,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n",
           numPages, size);
+    spaceId = pidMap->Find()+100;
     // first, set up the translation
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++)
@@ -128,6 +129,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
 AddrSpace::~AddrSpace()
 {
+    pidMap->Clear(spaceId-100);
     delete[] pageTable;
 }
 

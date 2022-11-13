@@ -60,7 +60,7 @@ void StartProcess(int intfilename)
 	}
 	space = new AddrSpace(executable);
 	currentThread->space = space;
-
+    machine->WriteRegister(2,space->getSpaceId());
 	delete executable; // close file
 
 	space->InitRegisters(); // set the initial register values
@@ -98,7 +98,15 @@ void ExceptionHandler(ExceptionType which)
 		machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg)); //将当前PC放在prev
 		machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg)); //将下一个要执行的PC放到下一个指针 
 		machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4); //将指针向下移动四个byte
-	}
+	}else if ((which == SyscallException) && (type == SC_PrintInt)) {
+        int val = machine->ReadRegister(4); //将MIPS machine存的参数取出来
+        interrupt->PrintInt(val);  //执行内核的system call
+        {//以下将Program counter+4，否則会一直执行instruction
+            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
+        }
+    }
 	else
 	{
 		printf("Unexpected user mode exception %d %d\n", which, type);

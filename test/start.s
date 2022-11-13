@@ -41,6 +41,22 @@ __start:
  * 	convention on the MIPS.
  * -------------------------------------------------------------
  */
+    .globl PrintInt
+    .ent PrintInt
+PrintInt:
+    addiu $2, $0,SC_PrintInt ///将刚刚define的SC_PrintInt放到register2
+    syscall                  ///执行system call
+    j       $31
+    .end PrintInt
+
+    .globl PageFault
+    .ent PageFault
+PageFault:
+    addiu $2, $0,SC_Page_Fault
+    syscall
+    j       $31
+    .end PageFault
+
 
 	.globl Halt
 	.ent	Halt

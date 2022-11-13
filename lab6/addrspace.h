@@ -37,12 +37,12 @@ public:
   void RestoreState(); // info on a context switch
 
   void Print();
+  unsigned int getSpaceId() { return spaceId; }
 
 private:
-  TranslationEntry *pageTable; // Assume linear page table translation
-                               // for now!
-  unsigned int numPages;       // Number of pages in the virtual
-                               // address space
+  TranslationEntry *pageTable;
+  unsigned int numPages;
+  int spaceId;
 };
 
 #endif // ADDRSPACE_H
