@@ -1,24 +1,4 @@
-// interrupt.cc 
-//	Routines to simulate hardware interrupts.
-//
-//	The hardware provides a routine (SetLevel) to enable or disable
-//	interrupts.
-//
-//	In order to emulate the hardware, we need to keep track of all
-//	interrupts the hardware devices would cause, and when they
-//	are supposed to occur.  
-//
-//	This module also keeps track of simulated time.  Time advances
-//	only when the following occur: 
-//		interrupts are re-enabled
-//		a user instruction is executed
-//		there is nothing in the ready queue
-//
-//  DO NOT CHANGE -- part of the machine emulation
-//
-// Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
-// of liability and disclaimer of warranty provisions.
+
 
 #include "copyright.h"
 #include "interrupt.h"
@@ -30,17 +10,6 @@ static const char *intLevelNames[] = { "off", "on"};
 static const char *intTypeNames[] = { "timer", "disk", "console write",
                                       "console read", "network send", "network recv"};
 
-//----------------------------------------------------------------------
-// PendingInterrupt::PendingInterrupt
-// 	Initialize a hardware device interrupt that is to be scheduled 
-//	to occur in the near future.
-//
-//	"func" is the procedure to call when the interrupt occurs
-//	"param" is the argument to pass to the procedure
-//	"time" is when (in simulated time) the interrupt is to occur
-//	"kind" is the hardware device that generated the interrupt
-//----------------------------------------------------------------------
-
 PendingInterrupt::PendingInterrupt(VoidFunctionPtr func, _int param, int time,
                                    IntType kind)
 {
@@ -49,13 +18,6 @@ PendingInterrupt::PendingInterrupt(VoidFunctionPtr func, _int param, int time,
     when = time;
     type = kind;
 }
-
-//----------------------------------------------------------------------
-// Interrupt::Interrupt
-// 	Initialize the simulation of hardware device interrupts.
-//	
-//	Interrupts start disabled, with no interrupts pending, etc.
-//----------------------------------------------------------------------
 
 Interrupt::Interrupt()
 {
@@ -66,11 +28,6 @@ Interrupt::Interrupt()
     status = SystemMode;
 }
 
-//----------------------------------------------------------------------
-// Interrupt::~Interrupt
-// 	De-allocate the data structures needed by the interrupt simulation.
-//----------------------------------------------------------------------
-
 Interrupt::~Interrupt()
 {
     while (!pending->IsEmpty())
@@ -78,21 +35,6 @@ Interrupt::~Interrupt()
     delete pending;
 }
 
-//----------------------------------------------------------------------
-// Interrupt::ChangeLevel
-// 	Change interrupts to be enabled or disabled, without advancing 
-//	the simulated time (normally, enabling interrupts advances the time).
-
-//----------------------------------------------------------------------
-// Interrupt::ChangeLevel
-// 	Change interrupts to be enabled or disabled, without advancing 
-//	the simulated time (normally, enabling interrupts advances the time).
-//
-//	Used internally.
-//
-//	"old" -- the old interrupt status
-//	"now" -- the new interrupt status
-//----------------------------------------------------------------------
 void
 Interrupt::ChangeLevel(IntStatus old, IntStatus now)
 {
@@ -100,25 +42,13 @@ Interrupt::ChangeLevel(IntStatus old, IntStatus now)
     DEBUG('i',"\tinterrupts: %s -> %s\n",intLevelNames[old],intLevelNames[now]);
 }
 
-//----------------------------------------------------------------------
-// Interrupt::SetLevel
-// 	Change interrupts to be enabled or disabled, and if interrupts
-//	are being enabled, advance simulated time by calling OneTick().
-//
-// Returns:
-//	The old interrupt status.
-// Parameters:
-//	"now" -- the new interrupt status
-//----------------------------------------------------------------------
 
 IntStatus
 Interrupt::SetLevel(IntStatus now)
 {
     IntStatus old = level;
 
-    ASSERT((now == IntOff) || (inHandler == FALSE));// interrupt handlers are 
-    // prohibited from enabling
-    // interrupts
+    ASSERT((now == IntOff) || (inHandler == FALSE));
 
     ChangeLevel(old, now);			// change to new state
     if ((now == IntOn) && (old == IntOff))
@@ -126,27 +56,12 @@ Interrupt::SetLevel(IntStatus now)
     return old;
 }
 
-//----------------------------------------------------------------------
-// Interrupt::Enable
-// 	Turn interrupts on.  Who cares what they used to be? 
-//	Used in ThreadRoot, to turn interrupts on when first starting up
-//	a thread.
-//----------------------------------------------------------------------
 void
 Interrupt::Enable()
 {
     (void) SetLevel(IntOn);
 }
 
-//----------------------------------------------------------------------
-// Interrupt::OneTick
-// 	Advance simulated time and check if there are any pending 
-//	interrupts to be called. 
-//
-//	Two things can cause OneTick to be called:
-//		interrupts are re-enabled
-//		a user instruction is executed
-//----------------------------------------------------------------------
 void
 Interrupt::OneTick()
 {

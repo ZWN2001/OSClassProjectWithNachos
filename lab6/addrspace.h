@@ -25,16 +25,12 @@ static BitMap freeMap(128);
 class AddrSpace
 {
 public:
-  AddrSpace(OpenFile *executable); // Create an address space,
-                                   // initializing it with the program
-                                   // stored in the file "executable"
-  ~AddrSpace();                    // De-allocate an address space
+  AddrSpace(OpenFile *executable);
 
-  void InitRegisters(); // Initialize user-level CPU registers,
-                        // before jumping to user code
+  void InitRegisters();
 
-  void SaveState();    // Save/restore address space-specific
-  void RestoreState(); // info on a context switch
+  void SaveState();
+  void RestoreState();
 
   void Print();
   unsigned int getSpaceId() { return spaceId; }

@@ -20,12 +20,6 @@
 #include "addrspace.h"
 #include "noff.h"
 
-//----------------------------------------------------------------------
-// SwapHeader
-// 	Do little endian to big endian conversion on the bytes in the
-//	object file header, in case the file was generated on a little
-//	endian machine, and we're now running on a big endian machine.
-//----------------------------------------------------------------------
 static BitMap *pidMap = new BitMap(NumPhysPages);
 static void
 SwapHeader(NoffHeader *noffH)
@@ -42,21 +36,6 @@ SwapHeader(NoffHeader *noffH)
     noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
-//----------------------------------------------------------------------
-// AddrSpace::AddrSpace
-// 	Create an address space to run a user program.
-//	Load the program from a file "executable", and set everything
-//	up so that we can start executing user instructions.
-//
-//	Assumes that the object code file is in NOFF format.
-//
-//	First, set up the translation from program memory to physical
-//	memory.  For now, this is really simple (1:1), since we are
-//	only uniprogramming, and we have a single unsegmented page table
-//
-//	"executable" is the file containing the object code to load into memory
-//----------------------------------------------------------------------
-
 AddrSpace::AddrSpace(OpenFile *executable)
 {
     NoffHeader noffH;
@@ -68,40 +47,34 @@ AddrSpace::AddrSpace(OpenFile *executable)
         SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
-    // how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize; // we need to increase the size
-                                                                                          // to leave room for the stack
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= NumPhysPages); // check we're not trying
-                                      // to run anything too big --
-                                      // at least until we have
-                                      // virtual memory
+    ASSERT(numPages <= NumPhysPages);
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n",
           numPages, size);
     spaceId = pidMap->Find()+100;
-    // first, set up the translation
+
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++)
     {
-        pageTable[i].virtualPage = i; // for now, virtual page # = phys page #
+        pageTable[i].virtualPage = i;
         //直接用freemap寻找空闲的指针
         pageTable[i].physicalPage = freeMap.Find();
         pageTable[i].valid = TRUE;
         pageTable[i].use = FALSE;
         pageTable[i].dirty = FALSE;
-        pageTable[i].readOnly = FALSE; // if the code segment was entirely on
-                                       // a separate page, we could set its
-                                       // pages to be read-only
+        pageTable[i].readOnly = FALSE;
     }
 
-    // zero out the entire address space, to zero the unitialized data segment
-    // and the stack segment
-    bzero(machine->mainMemory, size);
+//    bzero(machine->mainMemory, size);
+    for (i = 0; i < numPages; i++){
+        for (j = 0; j < PageSize; j++)
+            machine->mainMemory[ pageTable[i].physicalPage * PageSize + j ] = 0;
+    }
 
-    // then, copy in the code and data segments into memory
     if (noffH.code.size > 0)
     {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n",
@@ -122,26 +95,11 @@ AddrSpace::AddrSpace(OpenFile *executable)
     Print();
 }
 
-//----------------------------------------------------------------------
-// AddrSpace::~AddrSpace
-// 	Dealloate an address space.  Nothing for now!
-//----------------------------------------------------------------------
-
 AddrSpace::~AddrSpace()
 {
     pidMap->Clear(spaceId-100);
     delete[] pageTable;
 }
-
-//----------------------------------------------------------------------
-// AddrSpace::InitRegisters
-// 	Set the initial values for the user-level register set.
-//
-// 	We write these directly into the "machine" registers, so
-//	that we can immediately jump to user code.  Note that these
-//	will be saved/restored into the currentThread->userRegisters
-//	when this thread is context switched out.
-//----------------------------------------------------------------------
 
 void AddrSpace::InitRegisters()
 {
@@ -149,42 +107,17 @@ void AddrSpace::InitRegisters()
 
     for (i = 0; i < NumTotalRegs; i++)
         machine->WriteRegister(i, 0);
-
-    // Initial program counter -- must be location of "Start"
     machine->WriteRegister(PCReg, 0);
-
-    // Need to also tell MIPS where next instruction is, because
-    // of branch delay possibility
     machine->WriteRegister(NextPCReg, 4);
-
-    // Set the stack register to the end of the address space, where we
-    // allocated the stack; but subtract off a bit, to make sure we don't
-    // accidentally reference off the end!
     machine->WriteRegister(StackReg, numPages * PageSize - 16);
     DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
 }
-
-//----------------------------------------------------------------------
-// AddrSpace::SaveState
-// 	On a context switch, save any machine state, specific
-//	to this address space, that needs saving.
-//
-//	For now, nothing!
-//----------------------------------------------------------------------
 
 void AddrSpace::SaveState()
 {
     pageTable = machine->pageTable;
     numPages = machine->pageTableSize;
 }
-
-//----------------------------------------------------------------------
-// AddrSpace::RestoreState
-// 	On a context switch, restore the machine state so that
-//	this address space can run.
-//
-//      For now, tell the machine where to find the page table.
-//----------------------------------------------------------------------
 
 void AddrSpace::RestoreState()
 {

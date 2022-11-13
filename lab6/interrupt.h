@@ -1,36 +1,4 @@
-// interrupt.h 
-//	Data structures to emulate low-level interrupt hardware.
-//
-//	The hardware provides a routine (SetLevel) to enable or disable
-//	interrupts.
-//
-//	In order to emulate the hardware, we need to keep track of all
-//	interrupts the hardware devices would cause, and when they
-//	are supposed to occur.  
-//
-//	This module also keeps track of simulated time.  Time advances
-//	only when the following occur: 
-//		interrupts are re-enabled
-//		a user instruction is executed
-//		there is nothing in the ready queue
-//
-//	As a result, unlike real hardware, interrupts (and thus time-slice 
-//	context switches) cannot occur anywhere in the code where interrupts
-//	are enabled, but rather only at those places in the code where 
-//	simulated time advances (so that it becomes time to invoke an
-//	interrupt in the hardware simulation).
-//
-//	NOTE: this means that incorrectly synchronized code may work
-//	fine on this hardware simulation (even with randomized time slices),
-//	but it wouldn't work on real hardware.  (Just because we can't
-//	always detect when your program would fail in real life, does not 
-//	mean it's ok to write incorrectly synchronized code!)
-//
-//  DO NOT CHANGE -- part of the machine emulation
-//
-// Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
-// of liability and disclaimer of warranty provisions.
+
 
 #ifndef INTERRUPT_H
 #define INTERRUPT_H

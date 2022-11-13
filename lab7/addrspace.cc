@@ -1,31 +1,7 @@
-// addrspace.cc 
-//	Routines to manage address spaces (executing user programs).
-//
-//	In order to run a user program, you must:
-//
-//	1. link with the -N -T 0 option 
-//	2. run coff2noff to convert the object file to Nachos format
-//		(Nachos object code format is essentially just a simpler
-//		version of the UNIX executable object code format)
-//	3. load the NOFF file into the Nachos file system
-//		(if you haven't implemented the file system yet, you
-//		don't need to do this last step)
-//
-// Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
-// of liability and disclaimer of warranty provisions.
-
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
 #include "noff.h"
-
-//----------------------------------------------------------------------
-// SwapHeader
-// 	Do little endian to big endian conversion on the bytes in the 
-//	object file header, in case the file was generated on a little
-//	endian machine, and we're now running on a big endian machine.
-//----------------------------------------------------------------------
 
 static void
 SwapHeader(NoffHeader *noffH) {
@@ -40,21 +16,6 @@ SwapHeader(NoffHeader *noffH) {
     noffH->uninitData.virtualAddr = WordToHost(noffH->uninitData.virtualAddr);
     noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
-
-//----------------------------------------------------------------------
-// AddrSpace::AddrSpace
-// 	Create an address space to run a user program.
-//	Load the program from a file "executable", and set everything
-//	up so that we can start executing user instructions.
-//
-//	Assumes that the object code file is in NOFF format.
-//
-//	First, set up the translation from program memory to physical 
-//	memory.  For now, this is really simple (1:1), since we are
-//	only uniprogramming, and we have a single unsegmented page table
-//
-//	"executable" is the file containing the object code to load into memory
-//----------------------------------------------------------------------
 
 BitMap *AddrSpace::freeMap = new BitMap(NumPhysPages);
 BitMap *AddrSpace::swapMap = new BitMap(NumPhysPages);
