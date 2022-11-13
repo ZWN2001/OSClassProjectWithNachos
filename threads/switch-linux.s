@@ -76,9 +76,9 @@ ThreadRoot:
 **      4(esp)  ->              thread *t1
 **       (esp)  ->              return address
 **
-**
-**
-**
+** we push the current eax on the stack so that we can use it as
+** a pointer to t1, this decrements esp by 4, so when we use it
+** to reference stuff on the stack, we add 4 to the offset.
 */
         .comm   _eax_save,4
 

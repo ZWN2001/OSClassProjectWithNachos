@@ -30,20 +30,13 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-
-	space = new AddrSpace(executable);  
-	//Store previous addrspace, no need of spaceId using linkedlist struct  
-//	if (currentThread->space != NULL){
-//		currentThread->space->SaveState();
-//		space->setPreAddrSpace(currentThread->space);
-//	}
+    space = new AddrSpace(executable);    
     currentThread->space = space;
 
     delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
-	space->Print();
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;

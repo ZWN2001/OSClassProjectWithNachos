@@ -101,6 +101,15 @@ BitMap::Find()
 	}
     return -1;
 }
+int BitMap::FindIn(int start, int end)  {
+    for(int i=start;i<end;i++){
+        if(!Test(i)){
+            Mark(i);
+            return i;
+        }
+    }
+    return -1;
+}
 
 //----------------------------------------------------------------------
 // BitMap::NumClear

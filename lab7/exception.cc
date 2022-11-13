@@ -24,7 +24,8 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
-
+void StartProcess(int args);
+void AdvancePC();
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -47,68 +48,68 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-void StartProcess(int spaceId){
-    currentThread->space->InitRegisters();
-    currentThread->space->RestoreState();
-    machine->Run();
-    ASSERT(FALSE);
+
+
+
+void
+StartProcess(int *args)
+{
+    char *filename=(char *)args;
+    OpenFile *executable = fileSystem->Open(filename);
+    AddrSpace *space;
+
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return;
+    }
+    space = new AddrSpace(executable);
+    currentThread->space = space;
+
+    delete executable;			// close file
+
+    space->InitRegisters();		// set the initial register values
+    space->RestoreState();		// load page table register
+
+    machine->Run();			// jump to the user progam
+    ASSERT(FALSE);			// machine->Run never returns;
+    // the address space exits
+    // by doing the syscall "exit"
 }
 
-void ExceptionHandler(ExceptionType which) {
-    int type = machine->ReadRegister(2), i;
-    if(which == PageFaultException){
-        int badVAddr = machine->ReadRegister(BadVAddrReg);
-        interrupt->PageFault(badVAddr);
-        {
-            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
-        }
-    } else if ((which == SyscallException) && (type == SC_Halt)) {
-        DEBUG('a', "Shutdown, initiated by user program.\n");
-        interrupt->Halt();
-    } else if ((which == SyscallException) && (type == SC_Exec)) {
-        int FilePathMaxLen = 100;
-        char filepath[FilePathMaxLen];
-        int fileaddr = machine->ReadRegister(4);
-        for (i = 0; filepath[i] != '\0'; i++) {
-            if (!machine->ReadMem(fileaddr + 4 * i, 4, (int *) (filepath + 4 * i)))
-                break;
-        }
-//        OpenFile *executable = fileSystem->Open(filepath);
-//        if(executable == NULL) {
-//            printf("Unable to open file %s\n",filepath);
-//            return;
-//        }
-        // 建立新地址空间
-        AddrSpace *space = new AddrSpace(filepath);
-//        delete executable;	// 关闭文件
-        // 建立新核心线程
-        Thread *thread = new Thread(filepath);
-        // 将用户进程映射到核心线程上
-        thread->space = space;
-        space->Print();
-        thread->Fork(StartProcess,(int)space->getSpaceId());
-        machine->WriteRegister(2,space->getSpaceId());
-        {
-            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
-        }
-    } else if ((which == SyscallException) && (type == SC_Exit)) {
-        int ExitCode = machine->ReadRegister(4);
-        Exit(ExitCode);
-    } else if ((which == SyscallException) && (type == SC_PrintInt)) {
-        int val = machine->ReadRegister(4); //将MIPS machine存的参数取出来
-        interrupt->PrintInt(val);  //执行内核的system call
-        {//以下将Program counter+4，否則会一直执行instruction
-            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
-        }
+void
+ExceptionHandler(ExceptionType which)
+{
+    int type = machine->ReadRegister(2);
+
+    if ((which == SyscallException) && (type == SC_Halt)) {
+	DEBUG('a', "Shutdown, initiated by user program.\n");
+   	interrupt->Halt();
+    }else if((which==SyscallException)&&(type == SC_Exec)){
+       interrupt->Exec();
+       AdvancePC();
+    }else if((which==SyscallException)&&(type==SC_Exit)){
+        int num=machine->ReadRegister(4);
+        printf("exit!the A[0] is %d\n",num);
+        AdvancePC();
+        currentThread->Finish();
+    }
+    else if(which==PageFaultException){
+        int badVAddr=(int)machine->ReadRegister(BadVAddrReg);
+        printf("badVAddr is %d\n",badVAddr);
+        currentThread->space->FIFO(badVAddr);
+        stats->numPageFaults++;
+        machine->registers[NextPCReg]=machine->registers[PCReg];
+        machine->registers[PCReg]-=4;
+        printf("PCReg=%d,NextPCReg=%d\n",machine->registers[PCReg],machine->registers[NextPCReg]);
     } else {
-        printf("Unexpected user mode exception %d %d\n", which, type);
-        interrupt->Halt();
-        ASSERT(FALSE);
+	printf("Unexpected user mode exception %d %d\n", which, type);
+	  ASSERT(FALSE);
     }
 }
+
+void AdvancePC(){
+    machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+    machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+    machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
+}
+

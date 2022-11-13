@@ -24,7 +24,8 @@ CCFILES = main.cc\
 	sysdep.cc\
 	stats.cc\
 	timer.cc\
-	threadsbar.cc
+	prodcons++.cc\
+	ring.cc
 INCPATH += -I- -I../lab3 -I../threads -I../machine
 
 DEFINES += -DTHREADS

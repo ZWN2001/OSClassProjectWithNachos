@@ -23,26 +23,27 @@
 void
 StartProcess(char *filename)
 {
+    OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
-	space = new AddrSpace(filename);
-	//Store previous addrspace, no need of spaceId using linkedlist struct  
-//	if (currentThread->space != NULL){
-//		currentThread->space->SaveState();
-//		space->setPreAddrSpace(currentThread->space);
-//	}
+    if (executable == NULL) {
+        printf("Unable to open file %s\n", filename);
+        return;
+    }
+    space = new AddrSpace(executable);
     currentThread->space = space;
 
 //    delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
-	space->Print();
+
+    printf("end\n");
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
-					// the address space exits
-					// by doing the syscall "exit"
+    // the address space exits
+    // by doing the syscall "exit"
 }
 
 // Data structures needed for the console test.  Threads making
@@ -66,7 +67,7 @@ static void WriteDone(_int arg) { writeDone->V(); }
 //	the output.  Stop when the user types a 'q'.
 //----------------------------------------------------------------------
 
-void 
+void
 ConsoleTest (char *in, char *out)
 {
     char ch;
@@ -74,12 +75,14 @@ ConsoleTest (char *in, char *out)
     console = new Console(in, out, ReadAvail, WriteDone, 0);
     readAvail = new Semaphore("read avail", 0);
     writeDone = new Semaphore("write done", 0);
-    
+
     for (;;) {
-	readAvail->P();		// wait for character to arrive
-	ch = console->GetChar();
-	console->PutChar(ch);	// echo it!
-	writeDone->P() ;        // wait for write to finish
-	if (ch == 'q') return;  // if q, quit
+        readAvail->P();		// wait for character to arrive
+        ch = console->GetChar();
+        console->PutChar(ch);	// echo it!
+        writeDone->P() ;        // wait for write to finish
+        if (ch == 'q') return;  // if q, quit
     }
 }
+
+

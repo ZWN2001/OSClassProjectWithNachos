@@ -43,6 +43,19 @@ Thread::Thread(const char* threadName)
 #endif
 }
 
+Thread::Thread(const char* threadName, int priority)
+{
+    name = (char*)threadName;
+    stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+    this->priority = priority;
+#ifdef USER_PROGRAM
+    space = NULL;
+#endif
+}
+
+
 //----------------------------------------------------------------------
 // Thread::~Thread
 // 	De-allocate a thread.
@@ -228,6 +241,13 @@ Thread::Sleep ()
 	interrupt->Idle();	// no one to run, wait for an interrupt
         
     scheduler->Run(nextThread); // returns when we've been signalled
+}
+
+int Thread::get_priority(){
+    return this->priority;
+}
+void Thread::set_priority(int priority){
+    this->priority = priority;
 }
 
 //----------------------------------------------------------------------

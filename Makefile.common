@@ -46,9 +46,9 @@ include ../Makefile.dep
 # vpath tells gnu make where to look for certain files, as determined
 # by the target pattern, if it cannot find them in the current directory.
 
-vpath %.cc  ../network:../filesys:../userprog:../threads:../machine
-vpath %.h   ../network:../filesys:../userprog:../threads:../machine
-vpath %.s   ../network:../filesys:../userprog:../threads:../machine
+vpath %.cc  ../network ../filesys ../vm ../userprog ../threads ../machine
+vpath %.h   ../network ../filesys ../vm ../userprog ../threads ../machine
+vpath %.s   ../network ../filesys ../vm ../userprog ../threads ../machine
 
 
 #CFLAGS = -g -Wall -Wshadow -fwritable-strings $(INCPATH) $(DEFINES) $(HOST) -DCHANGED

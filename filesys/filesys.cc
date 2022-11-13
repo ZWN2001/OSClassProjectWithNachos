@@ -128,12 +128,12 @@ FileSystem::FileSystem(bool format)
 	if (DebugIsEnabled('f')) {
 	    freeMap->Print();
 	    directory->Print();
-        }
+
         delete freeMap; 
 	delete directory; 
 	delete mapHdr; 
 	delete dirHdr;
-
+	}
     } else {
     // if we are not formatting the disk, just open the files representing
     // the bitmap and directory; these are left open while Nachos is running
@@ -338,4 +338,4 @@ FileSystem::Print()
     delete dirHdr;
     delete freeMap;
     delete directory;
-}
+} 

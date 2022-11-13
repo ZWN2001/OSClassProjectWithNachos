@@ -51,7 +51,7 @@ class BitMap {
     // write the bitmap to a file
     void FetchFrom(OpenFile *file); 	// fetch contents from disk 
     void WriteBack(OpenFile *file); 	// write contents to disk
-
+    int FindIn(int start,int end);
   private:
     int numBits;			// number of bits in the bitmap
     int numWords;			// number of words of bitmap storage

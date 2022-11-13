@@ -19,6 +19,7 @@ endef
 include ../threads/Makefile.local
 include ../lab5/Makefile.local
 #include ../userprog/Makefile.local
+#include ../vm/Makefile.local
 include ../filesys/Makefile.local
 
 include ../Makefile.common

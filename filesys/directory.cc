@@ -1,4 +1,4 @@
-// directory.cc
+// directory.cc 
 //	Routines to manage a directory of file names.
 //
 //	The directory is a table of fixed length entries; each
@@ -15,16 +15,10 @@
 //	of the directory cannot expand.  In other words, once all the
 //	entries in the directory are used, no more files can be created.
 //	Fixing this is one of the parts to the assignment.
-
-///目录是一个固定长度的条目表; 每个条目表示一个文件，包含文件名和文件头在磁盘上的位置。
-/// 每个目录条目的固定大小意味着我们对文件名有固定的最大大小限制。
-
-///构造函数初始化一个特定大小的空目录;
-
-///我们使用 ReadFrom/WriteBack 从磁盘获取目录的内容，并将任何修改写回磁盘。
-
-///此外，此实现还受到目录大小不能扩展的限制。换句话说，一旦使用了目录中的所有条目，就不能再创建任何文件。
-///解决这个问题是任务的一部分。
+//
+// Copyright (c) 1992-1993 The Regents of the University of California.
+// All rights reserved.  See copyright.h for copyright notice and limitation 
+// of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 #include "utility.h"
@@ -39,10 +33,6 @@
 //	to initialize it from disk.
 //
 //	"size" is the number of entries in the directory
-
-///初始化一个目录。最初，该目录是完全空的。如果正在格式化磁盘，那么我们只需要一个空目录，
-/// 否则，我们需要调用 FetchFrom 来从磁盘初始化它。
-///“ size”是目录中的条目数
 //----------------------------------------------------------------------
 
 Directory::Directory(int size)

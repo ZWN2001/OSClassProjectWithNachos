@@ -1,7 +1,7 @@
-arch/unknown-i386-linux/depends/system.d arch/unknown-i386-linux/objects/system.o: ../threads/system.cc ../threads/copyright.h ../threads/system.h \
+arch/unknown-i386-linux/depends/system.d arch/unknown-i386-linux/objects/system.o: system.cc ../threads/copyright.h ../lab7/system.h \
  ../threads/utility.h ../threads/bool.h ../machine/sysdep.h \
- ../threads/copyright.h ../threads/thread.h ../machine/machine.h \
- ../threads/utility.h ../machine/translate.h ../machine/disk.h \
- ../lab7/addrspace.h ../filesys/filesys.h ../filesys/openfile.h \
- ../threads/scheduler.h ../threads/list.h ../machine/interrupt.h \
- ../threads/list.h ../machine/stats.h ../machine/timer.h
+ ../threads/thread.h ../machine/machine.h ../lab7/translate.h \
+ ../machine/disk.h ../lab7/addrspace.h ../filesys/filesys.h \
+ ../filesys/openfile.h ../lab7/bitmap.h ../threads/scheduler.h \
+ ../threads/list.h ../lab7/interrupt.h ../machine/stats.h \
+ ../machine/timer.h

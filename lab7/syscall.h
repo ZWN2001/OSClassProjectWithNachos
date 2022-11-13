@@ -29,8 +29,6 @@
 #define SC_Close	8
 #define SC_Fork		9
 #define SC_Yield	10
-#define SC_PrintInt	11
-#define SC_Page_Fault	12
 
 #ifndef IN_ASM
 
@@ -110,10 +108,7 @@ int Read(char *buffer, int size, OpenFileId id);
 /* Close the file, we're done reading and writing to it. */
 void Close(OpenFileId id);
 
-void PrintInt(int n);
 
-
-void PageFault(int badVAddr);
 
 /* User-level thread operations: Fork and Yield.  To allow multiple
  * threads to run within a user program. 

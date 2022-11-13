@@ -1,2 +1,0 @@
-# OSClassProjectWithNachos
-OS课设

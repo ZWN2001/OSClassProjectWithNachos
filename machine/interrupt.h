@@ -106,9 +106,9 @@ class Interrupt {
     // but they need to be public since they are called by the
     // hardware device simulators.
 
-    void Schedule(VoidFunctionPtr handler, _int arg, // Schedule an interrupt to occur
-	int fromnow, IntType type); // "fromNow" is how far in the future (in simulated time) the interrupt is to occur.
-	                    // This is called by the hardware device simulators.
+    void Schedule(VoidFunctionPtr handler,// Schedule an interrupt to occur
+	_int arg, int when, IntType type);// at time ``when''.  This is called
+    					// by the hardware device simulators.
     
     void OneTick();       		// Advance simulated time
 

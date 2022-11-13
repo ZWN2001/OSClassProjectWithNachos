@@ -140,15 +140,15 @@ Append(char *from, char *to, int half)
 //	result = openFile->WriteAt(buffer, amountRead, start);
 	result = openFile->Write(buffer, amountRead);
 //	printf("result of write: %d\n", result);
-	ASSERT(result == amountRead);
+//	ASSERT(result == amountRead);
 //	start += amountRead;
 //	ASSERT(start == openFile->Length());
     }
     delete [] buffer;
 
 //  Write the inode back to the disk, because we have changed it
-//  openFile->WriteBack();
-//  printf("inodes have been written back\n");
+  openFile->WriteBack();
+  printf("inodes have been written back\n");
     
 // Close the UNIX and the Nachos files
     delete openFile;
@@ -161,8 +161,8 @@ Append(char *from, char *to, int half)
 //         Nachos file instead of a UNIX file. It appends the contents
 //         of Nachos file "from" to the end of Nachos file "to".
 
-//      If Nachos file "to" does not exist, create the Nachos file 
-//         "to" with lengh 0, then append the contents of Nachos file 
+//      If Nachos file "to" does not exist, create the nachos file 
+//         "to" with lengh 0, then append the contents of UNIX file 
 //         "from" to the end of it.
 //----------------------------------------------------------------------
 
