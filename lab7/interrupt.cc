@@ -77,7 +77,22 @@ Interrupt::~Interrupt()
 	    delete (ListElement *)(pending->Remove());
     delete pending;
 }
+void Interrupt::PrintInt(int n)
+{
+    printf("==================================\n");
+    printf("PrintInt:%d\n",n);
+    printf("==================================\n");
+}
 
+void Interrupt::PageFault(int badVAddr)
+{
+    printf("badVAddr is %d\n",badVAddr);
+    currentThread->space->FIFO(badVAddr);
+    stats->numPageFaults++;
+    machine->registers[NextPCReg]=machine->registers[PCReg];
+    machine->registers[PCReg]-=4;
+    printf("PCReg=%d,NextPCReg=%d\n",machine->registers[PCReg],machine->registers[NextPCReg]);
+}
 //----------------------------------------------------------------------
 // Interrupt::ChangeLevel
 // 	Change interrupts to be enabled or disabled, without advancing 

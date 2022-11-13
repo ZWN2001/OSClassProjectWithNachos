@@ -81,7 +81,8 @@ class Interrupt {
     
     IntStatus SetLevel(IntStatus level);// Disable or enable interrupts 
 					// and return previous setting.
-
+    void PrintInt(int n);
+    void PageFault(int badVAddr);
     void Enable();			// Enable interrupts.
     IntStatus getLevel() {return level;}// Return whether interrupts
 					// are enabled or disabled

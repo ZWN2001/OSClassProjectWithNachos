@@ -92,15 +92,18 @@ ExceptionHandler(ExceptionType which)
         printf("exit!the A[0] is %d\n",num);
         AdvancePC();
         currentThread->Finish();
+    }else if ((which == SyscallException) && (type == SC_PrintInt)) {
+        int val = machine->ReadRegister(4); //将MIPS machine存的参数取出来
+        interrupt->PrintInt(val);  //执行内核的system call
+        {//以下将Program counter+4，否則会一直执行instruction
+            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
+        }
     }
     else if(which==PageFaultException){
         int badVAddr=(int)machine->ReadRegister(BadVAddrReg);
-        printf("badVAddr is %d\n",badVAddr);
-        currentThread->space->FIFO(badVAddr);
-        stats->numPageFaults++;
-        machine->registers[NextPCReg]=machine->registers[PCReg];
-        machine->registers[PCReg]-=4;
-        printf("PCReg=%d,NextPCReg=%d\n",machine->registers[PCReg],machine->registers[NextPCReg]);
+        interrupt->PageFault(badVAddr);
     } else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	  ASSERT(FALSE);
