@@ -19,7 +19,8 @@ SwapHeader(NoffHeader *noffH) {
 
 BitMap *AddrSpace::freeMap = new BitMap(NumPhysPages);
 BitMap *AddrSpace::swapMap = new BitMap(NumPhysPages);
-OpenFile *AddrSpace::swapFile = fileSystem->Open("SWAP");
+//OpenFile *AddrSpace::swapFile = fileSystem->Open("SWAP");
+//OpenFile *AddrSpace::swapFile;
 
 AddrSpace::AddrSpace(OpenFile *executable) {
     for (int i = 0; i < 128; i++) {
@@ -45,6 +46,8 @@ AddrSpace::AddrSpace(OpenFile *executable) {
     numPages = divRoundUp(noffH.code.size, PageSize) + divRoundUp(noffH.initData.size, PageSize) +
                divRoundUp(noffH.uninitData.size, PageSize) + StackPages;
     size = numPages * PageSize;
+    fileSystem->Remove("VirtualMemory");
+    fileSystem->Create("VirtualMemory", size);
 
     printf("the NumPhysPages is %d\n", NumPhysPages);
     printf("the numPages is %d\n", numPages);
@@ -52,11 +55,10 @@ AddrSpace::AddrSpace(OpenFile *executable) {
     DEBUG('a', "Initializing address space, num pages %d, size %d\n",
           numPages, size);
 
-    bzero(machine->mainMemory, size);
+//    bzero(machine->mainMemory, size);
     InitPageTable();
     InitInFileAddr();
     print();
-    printf("end\n");
 }
 
 AddrSpace::~AddrSpace() {
@@ -110,6 +112,7 @@ void AddrSpace::InitPageTable() {
         pageTable[i].inFileAddr = -1;
         if (i >= numPages - StackPages)
             pageTable[i].type = vmuserStack;
+        //给MemPage分配页
         if (i < MemPages) {
             virtualMem[p_vm] = pageTable[i].virtualPage;
             p_vm = (p_vm + 1) % MemPages;
@@ -124,6 +127,7 @@ void AddrSpace::InitPageTable() {
 
 void AddrSpace::InitInFileAddr() {
     NoffHeader noffH;
+    OpenFile *swapFile = fileSystem->Open("VirtualMemory");
     executable->ReadAt((char *) &noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
         (WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -137,6 +141,8 @@ void AddrSpace::InitInFileAddr() {
             if (pageTable[i].valid) {
                 executable->ReadAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]), PageSize,
                                    pageTable[i].inFileAddr);
+                swapFile->WriteAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]), PageSize,
+                                 pageTable[i].inFileAddr);
             }
         }
     }
@@ -150,6 +156,8 @@ void AddrSpace::InitInFileAddr() {
             if (pageTable[i].valid) {
                 executable->ReadAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]), PageSize,
                                    pageTable[i].inFileAddr);
+                swapFile->WriteAt(&(machine->mainMemory[pageTable[i].physicalPage * PageSize]), PageSize,
+                                  pageTable[i].inFileAddr);
             }
         }
     }
@@ -159,13 +167,13 @@ void AddrSpace::InitInFileAddr() {
         firstP = divRoundUp(noffH.uninitData.virtualAddr, PageSize);
         for (int i = firstP; i < numP + firstP; i++) {
             pageTable[i].type = vmuninitData;
-
         }
     }
+
+    delete swapFile;
 }
 
 void AddrSpace::Translate(int addr, unsigned int *vpn, unsigned int *offset) {
-    printf("enter translate\n");
     NoffHeader noffH;
     executable->ReadAt((char *) &noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
@@ -203,8 +211,7 @@ void AddrSpace::FIFO(int badVAddr) {
 
     virtualMem[p_vm] = newPage;
     p_vm = (p_vm + 1) % MemPages;
-    printf("swap vm page %d:%d=>%d\n", pageTable[oldPage].physicalPage, pageTable[oldPage].virtualPage,
-           pageTable[newPage].virtualPage);
+    printf("old:%d,new:%d\n",oldPage,newPage);
     Swap(oldPage, newPage);
 }
 
@@ -224,9 +231,11 @@ void AddrSpace::Swap(int oldPage, int newPage) {
 void AddrSpace::WriteBack(int oldPage) {
     printf("enter writeBack\n");
     if (pageTable[oldPage].dirty) {
+        OpenFile *swapFile = fileSystem->Open("VirtualMemory");
         switch (pageTable[oldPage].type) {
             case vmcode:
             case vminitData:
+                stats->numDiskWrites++;
                 ASSERT(pageTable[oldPage].type != vmcode);
                 ASSERT(pageTable[oldPage].type != vminitData);
                 executable->WriteAt(&(machine->mainMemory[pageTable[oldPage].physicalPage * PageSize]), PageSize,
@@ -234,6 +243,7 @@ void AddrSpace::WriteBack(int oldPage) {
                 break;
             case vmuninitData:
             case vmuserStack:
+                stats->numDiskWrites++;
                 pageTable[oldPage].inFileAddr =
                         (swapMap->FindIn(spaceID * NumPhysPages, (spaceID + 1) * NumPhysPages)) * PageSize;
                 swapFile->WriteAt(&(machine->mainMemory[pageTable[oldPage].physicalPage * PageSize]), PageSize,
@@ -241,20 +251,25 @@ void AddrSpace::WriteBack(int oldPage) {
                 break;
         }
         pageTable[oldPage].dirty = false;
+        delete swapFile;
     }
 }
 
 void AddrSpace::ReadIn(int newPage) {
     printf("enter readin\n");
+
+    OpenFile *swapFile = fileSystem->Open("VirtualMemory");
     switch (pageTable[newPage].type) {
         case vmcode:
         case vminitData:
+            stats->numDiskReads++;
             printf("copy from source file pageTable[newPage].inFileAddr:%d===>mainMemory[%d]\n",
                    pageTable[newPage].inFileAddr, pageTable[newPage].physicalPage * PageSize);
             executable->ReadAt(&(machine->mainMemory[pageTable[newPage].physicalPage * PageSize]), PageSize,
                                pageTable[newPage].inFileAddr);
             break;
         case vmuninitData:
+            stats->numDiskReads++;
             if (pageTable[newPage].inFileAddr >= 0) {
                 printf("copy from swap file pageTable[newPage].inFileAddr:%d===>mainMemory[%d]\n",
                        pageTable[newPage].inFileAddr, pageTable[newPage].physicalPage * PageSize);
@@ -262,9 +277,10 @@ void AddrSpace::ReadIn(int newPage) {
                                  pageTable[newPage].inFileAddr);
                 swapMap->Clear(pageTable[newPage].inFileAddr / PageSize);
                 pageTable[newPage].inFileAddr = -1;
-            } else
+            } else{
                 bzero(machine->mainMemory + pageTable[newPage].physicalPage * PageSize, PageSize);
+            }
             break;
-
+            delete swapFile;
     }
 }

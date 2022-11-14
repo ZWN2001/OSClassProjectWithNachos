@@ -101,6 +101,8 @@ BitMap::Find()
 	}
     return -1;
 }
+
+//在start与end之间找到首个被使用过的位图下标
 int BitMap::FindIn(int start, int end)  {
     for(int i=start;i<end;i++){
         if(!Test(i)){

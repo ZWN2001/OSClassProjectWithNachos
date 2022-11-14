@@ -43,7 +43,7 @@ class AddrSpace {
     int spaceID;
 
     static BitMap *swapMap;
-    static OpenFile *swapFile;
+//    static OpenFile *swapFile;
 
     OpenFile *executable;
     int virtualMem[NumPhysPages];
