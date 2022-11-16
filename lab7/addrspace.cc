@@ -141,19 +141,32 @@ void AddrSpace::FIFO(int badVAddr) {
 
     virtualMem[p_vm] = newPage;
     p_vm = (p_vm + 1) % MemPages;
-    printf("old:%d,new:%d\n",oldPage,newPage);
+    printf("physpage:old:%d,new:%d\n",oldPage,newPage);
     Swap(oldPage, newPage);
+}
+
+void AddrSpace::PrintVM(){
+    for(int i = 0;i <MemPages;i++){
+        printf("%d, ",virtualMem[i]);
+    }
+    printf("\n");
 }
 
 void AddrSpace::Swap(int oldPage, int newPage) {
     printf("enter swap\n");
+    PrintVM();
     if(oldPage == -1){
-        pageTable[newPage].physicalPage = p_vm - 1;
+        if(p_vm == 0){
+            pageTable[newPage].physicalPage = 4;
+        } else{
+            pageTable[newPage].physicalPage = p_vm - 1;
+        }
     } else{
         WriteBack(oldPage);
         pageTable[newPage].physicalPage = pageTable[oldPage].physicalPage;
         pageTable[oldPage].physicalPage = -1;
         pageTable[oldPage].valid = false;
+        pageTable[oldPage].use = false;
     }
     pageTable[newPage].valid = true;
     pageTable[newPage].use = true;
@@ -166,8 +179,9 @@ void AddrSpace::WriteBack(int oldPage) {
     OpenFile *vm = fileSystem->Open("VirtualMemory");
     printf("enter writeBack\n");
     if (pageTable[oldPage].dirty) {
+        printf("writeBack physpage:%d\n",oldPage);
         stats->numDiskWrites++;
-        vm->WriteAt(&(machine->mainMemory[pageTable[oldPage].virtualPage * PageSize]), PageSize,
+        vm->WriteAt(&(machine->mainMemory[pageTable[oldPage].physicalPage * PageSize]), PageSize,
                     pageTable[oldPage].virtualPage * PageSize);
         pageTable[oldPage].dirty = false;
     }
@@ -178,7 +192,7 @@ void AddrSpace::ReadIn(int newPage) {
     printf("enter readin\n");
     OpenFile *vm = fileSystem->Open("VirtualMemory");
     stats->numDiskReads++;
-    vm->ReadAt(&(machine->mainMemory[pageTable[newPage].virtualPage * PageSize]), PageSize,
-                               pageTable[newPage].virtualPage * PageSize);
+    vm->ReadAt(&(machine->mainMemory[pageTable[newPage].physicalPage * PageSize]), PageSize,
+               pageTable[newPage].virtualPage * PageSize);
     delete vm;
 }

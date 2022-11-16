@@ -6,20 +6,20 @@
 #include "bitmap.h"
 #define UserStackSize		1024 	// increase this as necessary!
 #define StackPages UserStackSize/PageSize
-#define MemPages 10
+#define MemPages 5
 
 class AddrSpace {
-  public:
+public:
     AddrSpace(OpenFile *executable);	// Create an address space,
-					// initializing it with the program
-					// stored in the file "executable"
+    // initializing it with the program
+    // stored in the file "executable"
     ~AddrSpace();			// De-allocate an address space
 
     void InitRegisters();		// Initialize user-level CPU registers,
-					// before jumping to user code
+    // before jumping to user code
 
     void SaveState();			// Save/restore address space-specific
-    void RestoreState();		// info on a context switch 
+    void RestoreState();		// info on a context switch
     int getSpaceID(){return spaceID;}
     void print();
 
@@ -31,7 +31,8 @@ class AddrSpace {
 
     void WriteBack(int oldPage);
     void ReadIn(int newPage);
-  private:
+    void PrintVM();
+private:
     TranslationEntry *pageTable;
     unsigned int numPages;
     static BitMap *freeMap;

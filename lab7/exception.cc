@@ -82,31 +82,27 @@ ExceptionHandler(ExceptionType which)
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
+        DEBUG('a', "Shutdown, initiated by user program.\n");
+        interrupt->Halt();
     }else if((which==SyscallException)&&(type == SC_Exec)){
-       interrupt->Exec();
-       AdvancePC();
+        interrupt->Exec();
+        AdvancePC();
     }else if((which==SyscallException)&&(type==SC_Exit)){
         int num=machine->ReadRegister(4);
-        printf("exit!\n",);
+        printf("exit!\n");
         AdvancePC();
         currentThread->Finish();
     }else if ((which == SyscallException) && (type == SC_PrintInt)) {
         int val = machine->ReadRegister(4); //将MIPS machine存的参数取出来
         interrupt->PrintInt(val);  //执行内核的system call
-        {//以下将Program counter+4，否則会一直执行instruction
-            machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
-            machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-            machine->WriteRegister(NextPCReg, machine->ReadRegister(PCReg)+4);
-        }
+        AdvancePC();
     }
     else if(which==PageFaultException){
         int badVAddr=(int)machine->ReadRegister(BadVAddrReg);
         interrupt->PageFault(badVAddr);
     } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	  ASSERT(FALSE);
+        printf("Unexpected user mode exception %d %d\n", which, type);
+        ASSERT(FALSE);
     }
 }
 
