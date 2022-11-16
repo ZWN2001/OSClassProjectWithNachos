@@ -89,7 +89,7 @@ ExceptionHandler(ExceptionType which)
        AdvancePC();
     }else if((which==SyscallException)&&(type==SC_Exit)){
         int num=machine->ReadRegister(4);
-        printf("exit!the A[0] is %d\n",num);
+        printf("exit!\n",);
         AdvancePC();
         currentThread->Finish();
     }else if ((which == SyscallException) && (type == SC_PrintInt)) {

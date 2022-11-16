@@ -25,31 +25,19 @@ class AddrSpace {
 
 
     void InitPageTable();//init pageTable
-    void InitInFileAddr();//init pageTable entry inFileAddr
     void FIFO(int newPage);//FIFO swap
     void Translate(int addr,unsigned int *vpn,unsigned int *offset);
-    //addr vpn to virtualPageNumber,offset
     void Swap(int oldPage,int newPage);
-    //use WriteBack and ReadIn be oldPage to newPage
+
     void WriteBack(int oldPage);
     void ReadIn(int newPage);
   private:
-    TranslationEntry *pageTable;	// Assume linear page table translation
-					// for now!
-    unsigned int numPages;		// Number of pages in the virtual 
-					// address space
-
+    TranslationEntry *pageTable;
+    unsigned int numPages;
     static BitMap *freeMap;
     int spaceID;
-
-    static BitMap *swapMap;
-//    static OpenFile *swapFile;
-
-    OpenFile *executable;
     int virtualMem[NumPhysPages];
     int p_vm;
-
-
 };
 
 #endif // ADDRSPACE_H
