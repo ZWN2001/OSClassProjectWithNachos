@@ -38,7 +38,7 @@ Statistics::Print()
     printf("Disk I/O: reads %d, writes %d\n", numDiskReads, numDiskWrites);
     printf("Console I/O: reads %d, writes %d\n", numConsoleCharsRead, 
 	numConsoleCharsWritten);
-    printf("Paging: faults %d\n", numPageFaults);
+    printf("Paging: faults %d£¬write back£º %d\n", numPageFaults,numDiskWrites);
     printf("Network I/O: packets received %d, sent %d\n", numPacketsRecvd, 
 	numPacketsSent);
 }
