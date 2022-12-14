@@ -82,11 +82,11 @@ ExceptionHandler(ExceptionType which)
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-        DEBUG('a', "Shutdown, initiated by user program.\n");
-        interrupt->Halt();
+	DEBUG('a', "Shutdown, initiated by user program.\n");
+   	interrupt->Halt();
     }else if((which==SyscallException)&&(type == SC_Exec)){
-        interrupt->Exec();
-        AdvancePC();
+       interrupt->Exec();
+       AdvancePC();
     }else if((which==SyscallException)&&(type==SC_Exit)){
         int num=machine->ReadRegister(4);
         printf("exit!\n");
@@ -100,9 +100,10 @@ ExceptionHandler(ExceptionType which)
     else if(which==PageFaultException){
         int badVAddr=(int)machine->ReadRegister(BadVAddrReg);
         interrupt->PageFault(badVAddr);
+//        AdvancePC();
     } else {
-        printf("Unexpected user mode exception %d %d\n", which, type);
-        ASSERT(FALSE);
+	printf("Unexpected user mode exception %d %d\n", which, type);
+	  ASSERT(FALSE);
     }
 }
 

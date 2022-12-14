@@ -132,10 +132,8 @@ void AddrSpace::InitPageTable() {
 }
 
 void AddrSpace::FIFO(int badVAddr) {
-    printf("enter fifo\n");
     unsigned int oldPage = virtualMem[p_vm];
     unsigned int newPage;
-    unsigned int tmp;
     newPage = badVAddr/PageSize;
     ASSERT(newPage < numPages);
 
@@ -144,6 +142,32 @@ void AddrSpace::FIFO(int badVAddr) {
     printf("physpage:old:%d,new:%d\n",oldPage,newPage);
     Swap(oldPage, newPage);
 }
+
+void AddrSpace::SecondChance(int badVAddr){
+    while(true){
+        p_vm = p_vm % MemPages;
+        if(pageTable[virtualMem[p_vm]].valid == false){
+            break;
+        } else{
+            if(pageTable[virtualMem[p_vm]].use){
+                pageTable[virtualMem[p_vm]].use = false;
+                p_vm++;
+            } else{
+                break;
+            }
+        }
+
+    }
+    unsigned int oldPage = virtualMem[p_vm];
+    unsigned int newPage;
+    newPage = badVAddr/PageSize;
+    ASSERT(newPage < numPages);
+
+    virtualMem[p_vm] = newPage;
+    p_vm = (p_vm + 1) % MemPages;
+    Swap(oldPage, newPage);
+}
+
 
 void AddrSpace::PrintVM(){
     for(int i = 0;i <MemPages;i++){
@@ -164,9 +188,7 @@ void AddrSpace::Swap(int oldPage, int newPage) {
     } else{
         WriteBack(oldPage);
         pageTable[newPage].physicalPage = pageTable[oldPage].physicalPage;
-        pageTable[oldPage].physicalPage = -1;
         pageTable[oldPage].valid = false;
-        pageTable[oldPage].use = false;
     }
     pageTable[newPage].valid = true;
     pageTable[newPage].use = true;

@@ -87,11 +87,11 @@ void Interrupt::PrintInt(int n)
 void Interrupt::PageFault(int badVAddr)
 {
     printf("badVAddr is %d\n",badVAddr);
-    currentThread->space->FIFO(badVAddr);
+    currentThread->space->SecondChance(badVAddr);
     stats->numPageFaults++;
-    machine->registers[NextPCReg]=machine->registers[PCReg];
-    machine->registers[PCReg]-=4;
-    printf("PCReg=%d,NextPCReg=%d\n",machine->registers[PCReg],machine->registers[NextPCReg]);
+//    machine->registers[NextPCReg]=machine->registers[PCReg];
+//    machine->registers[PCReg]-=4;
+    printf("PCReg=%d,NextPCReg=%d\n\n",machine->registers[PCReg],machine->registers[NextPCReg]);
 }
 //----------------------------------------------------------------------
 // Interrupt::ChangeLevel

@@ -27,10 +27,10 @@ StartProcess(char *filename)
     AddrSpace *space;
 
     if (executable == NULL) {
-	printf("Unable to open file %s\n", filename);
-	return;
+        printf("Unable to open file %s\n", filename);
+        return;
     }
-    space = new AddrSpace(executable);    
+    space = new AddrSpace(executable);
     currentThread->space = space;
 
     delete executable;			// close file
@@ -40,8 +40,8 @@ StartProcess(char *filename)
 
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
-					// the address space exits
-					// by doing the syscall "exit"
+    // the address space exits
+    // by doing the syscall "exit"
 }
 
 // Data structures needed for the console test.  Threads making
@@ -65,7 +65,7 @@ static void WriteDone(_int arg) { writeDone->V(); }
 //	the output.  Stop when the user types a 'q'.
 //----------------------------------------------------------------------
 
-void 
+void
 ConsoleTest (char *in, char *out)
 {
     char ch;
@@ -73,12 +73,12 @@ ConsoleTest (char *in, char *out)
     console = new Console(in, out, ReadAvail, WriteDone, 0);
     readAvail = new Semaphore("read avail", 0);
     writeDone = new Semaphore("write done", 0);
-    
+
     for (;;) {
-	readAvail->P();		// wait for character to arrive
-	ch = console->GetChar();
-	console->PutChar(ch);	// echo it!
-	writeDone->P() ;        // wait for write to finish
-	if (ch == 'q') return;  // if q, quit
+        readAvail->P();		// wait for character to arrive
+        ch = console->GetChar();
+        console->PutChar(ch);	// echo it!
+        writeDone->P() ;        // wait for write to finish
+        if (ch == 'q') return;  // if q, quit
     }
 }
