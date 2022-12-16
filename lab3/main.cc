@@ -55,7 +55,7 @@
 
 // External functions used by this file
 
-extern void ProdCons(void), Copy(char *unixFile, char *nachosFile);
+extern void ThreadsBarrier(void), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
@@ -79,17 +79,17 @@ int
 main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
-					// for a particular command
+    // for a particular command
 
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
-    
+
 #ifdef THREADS
-    ProdCons();
+    ThreadsBarrier();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
-	argCount = 1;
+        argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
             printf ("%s", copyright);
 #ifdef USER_PROGRAM
@@ -111,7 +111,7 @@ main(int argc, char **argv)
 	}
 #endif // USER_PROGRAM
 #ifdef FILESYS
-	if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos
+        if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos
 	    ASSERT(argc > 2);
 	    Copy(*(argv + 1), *(argv + 2));
 	    argCount = 3;
@@ -144,12 +144,12 @@ main(int argc, char **argv)
     }
 
     currentThread->Finish();	// NOTE: if the procedure "main" 
-				// returns, then the program "nachos"
-				// will exit (as any other normal program
-				// would).  But there may be other
-				// threads on the ready list.  We switch
-				// to those threads by saying that the
-				// "main" thread is finished, preventing
-				// it from returning.
+    // returns, then the program "nachos"
+    // will exit (as any other normal program
+    // would).  But there may be other
+    // threads on the ready list.  We switch
+    // to those threads by saying that the
+    // "main" thread is finished, preventing
+    // it from returning.
     return(0);			// Not reached...
 }

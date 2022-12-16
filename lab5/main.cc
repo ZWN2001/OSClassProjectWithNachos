@@ -57,10 +57,13 @@
 
 extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
 extern void Append(char *unixFile, char *nachosFile, int half);
-extern void NAppend(char *nachosFile, char *);
+extern void NAppend(char *nachosFileFrom, char *nachosFileTo);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
+extern void PrintDetail();
+
+
 //----------------------------------------------------------------------
 // main
 // 	Bootstrap the operating system kernel.  
@@ -80,7 +83,7 @@ main(int argc, char **argv)
 {
     int argCount;			// the number of arguments 
 					// for a particular command
-    
+
     DEBUG('t', "Entering main");
     (void) Initialize(argc, argv);
     
@@ -91,7 +94,7 @@ main(int argc, char **argv)
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
-            printf (copyright);
+            printf ("%s", copyright);
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	    ASSERT(argc > 1);
@@ -127,7 +130,11 @@ main(int argc, char **argv)
 	    Append(*(argv + 1), *(argv + 2), 1);
 	    argCount = 3;
         }
-	else if (!strcmp(*argv, "-p")) {	// print a Nachos file
+	else if (!strcmp(*argv, "-nap")) {  // append from Nachos to Nachos
+	    ASSERT(argc > 2);
+	    NAppend(*(argv + 1), *(argv + 2));
+	    argCount = 3;
+	} else if (!strcmp(*argv, "-p")) {	// print a Nachos file
 	    ASSERT(argc > 1);
 	    Print(*(argv + 1));
 	    argCount = 2;
@@ -141,6 +148,8 @@ main(int argc, char **argv)
             fileSystem->Print();
 	} else if (!strcmp(*argv, "-t")) {	// performance test
             PerformanceTest();
+	} else if (!strcmp(*argv, "-DI")) {
+	    PrintDetail();
 	}
 #endif // FILESYS
 #ifdef NETWORK

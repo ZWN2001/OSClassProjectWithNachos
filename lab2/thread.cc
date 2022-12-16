@@ -31,30 +31,33 @@
 //
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
+Thread::Thread(const char* threadName, int threadpriority) {
+    name = (char*)threadName;
+    stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+    if (threadpriority > 99)
+        priority = 99;
+    else if (threadpriority < 0)
+        priority = 0;
+    else
+        priority = threadpriority;
+#ifndef USER_PROGRAM
+    space = NULL;
+#endif // !USER_PROGRAM
 
+}
 Thread::Thread(const char* threadName)
 {
     name = (char*)threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    priority = 9;
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
 }
-
-Thread::Thread(const char* threadName, int priority)
-{
-    name = (char*)threadName;
-    stackTop = NULL;
-    stack = NULL;
-    status = JUST_CREATED;
-    this->priority = priority;
-#ifdef USER_PROGRAM
-    space = NULL;
-#endif
-}
-
 
 //----------------------------------------------------------------------
 // Thread::~Thread
@@ -198,10 +201,9 @@ Thread::Yield ()
     ASSERT(this == currentThread);
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
-    
-    nextThread = scheduler->FindNextToRun();
+    scheduler->ReadyToRun(this);
     if (nextThread != NULL) {
-	scheduler->ReadyToRun(this);
+    nextThread = scheduler->FindNextToRun();
 	scheduler->Run(nextThread);
     }
     (void) interrupt->SetLevel(oldLevel);
@@ -241,13 +243,6 @@ Thread::Sleep ()
 	interrupt->Idle();	// no one to run, wait for an interrupt
         
     scheduler->Run(nextThread); // returns when we've been signalled
-}
-
-int Thread::get_priority(){
-    return this->priority;
-}
-void Thread::set_priority(int priority){
-    this->priority = priority;
 }
 
 //----------------------------------------------------------------------

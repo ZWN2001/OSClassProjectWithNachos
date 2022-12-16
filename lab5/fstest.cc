@@ -20,13 +20,13 @@
 #include "thread.h"
 #include "disk.h"
 #include "stats.h"
+#include <sys/stat.h> // get unix file time
+#include "bitmap.h"
 
 #include "directory.h"
 
 
 #define TransferSize 	10 	// make it small, just to be difficult
-
-
 
 //----------------------------------------------------------------------
 // Copy
@@ -40,6 +40,7 @@ Copy(char *from, char *to)
     OpenFile* openFile;
     int amountRead, fileLength;
     char *buffer;
+    struct stat fileState;
 
 // Open UNIX file
     if ((fp = fopen(from, "r")) == NULL) {	 
@@ -52,9 +53,17 @@ Copy(char *from, char *to)
     fileLength = ftell(fp);
     fseek(fp, 0, 0);
 
+    // get last edit time of UNIX file
+    int result = stat(from, &fileState);
+    if (result == 0) {
+        printf("last edit time of UNIX file: %ld\n", fileState.st_mtim);
+    } else {
+        printf("Wrong: last edit time of UNIX file\n");
+    }
+
 // Create a Nachos file of the same length
     DEBUG('f', "Copying file %s, size %d, to file %s\n", from, fileLength, to);
-    if (!fileSystem->Create(to, fileLength)) {	 // Create Nachos file
+    if (!fileSystem->CopyCreate(to, fileLength, fileState.st_mtim.tv_sec)) {	 // Create Nachos file
 	printf("Copy: couldn't create output file %s\n", to);
 	fclose(fp);
 	return;
@@ -94,6 +103,7 @@ Append(char *from, char *to, int half)
     OpenFile* openFile;
     int amountRead, fileLength;
     char *buffer;
+    struct stat fileState;
 
 //  start position for appending
     int start;
@@ -109,6 +119,14 @@ Append(char *from, char *to, int half)
     fileLength = ftell(fp);
     fseek(fp, 0, 0);
 
+    // get last edit time of UNIX file
+    int re = stat(from, &fileState);
+    if (re == 0) {
+        printf("last edit time of UNIX file: %ld\n", fileState.st_mtim);
+    } else {
+        printf("Wrong: last edit time of UNIX file\n");
+    }
+
     if (fileLength == 0) 
     {
 	printf("Append: nothing to append from file %s\n", from);
@@ -118,7 +136,7 @@ Append(char *from, char *to, int half)
     if ( (openFile = fileSystem->Open(to)) == NULL)
     {
 	// file "to" does not exits, then create one
-	if (!fileSystem->Create(to, 0)) 
+	if (!fileSystem->CopyCreate(to, 0, fileState.st_mtim.tv_sec)) 
 	{
 	    printf("Append: couldn't create the file %s to append\n", to);
 	    fclose(fp);
@@ -138,27 +156,24 @@ Append(char *from, char *to, int half)
     while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0) 
     {
         int result;
-//	printf("start value: %d,  amountRead %d, ", start, amountRead);
-//	result = openFile->WriteAt(buffer, amountRead, start);
+	// printf("start value: %d,  amountRead %d, ", start, amountRead);
+	// result = openFile->WriteAt(buffer, amountRead, start);
 	result = openFile->Write(buffer, amountRead);
-//	printf("result of write: %d\n", result);
+	printf("result of write: %d\n", result);
 	ASSERT(result == amountRead);
-//	start += amountRead;
-//	ASSERT(start == openFile->Length());
+	// start += amountRead;
+	// ASSERT(start == openFile->Length());
     }
     delete [] buffer;
 
-// Write the inode back to the disk, because we have changed it
-    openFile->WriteBack();
-    printf("inodes have been written back\n");
+//  Write the inode back to the disk, because we have changed it
+  openFile->WriteBack();
+  printf("inodes have been written back\n");
     
 // Close the UNIX and the Nachos files
     delete openFile;
     fclose(fp);
 }
-
-//*****************************************************************************
-
 
 //----------------------------------------------------------------------
 // NAppend
@@ -166,8 +181,8 @@ Append(char *from, char *to, int half)
 //         Nachos file instead of a UNIX file. It appends the contents
 //         of Nachos file "from" to the end of Nachos file "to".
 
-//      If Nachos file "to" does not exist, create the nachos file 
-//         "to" with lengh 0, then append the contents of UNIX file 
+//      If Nachos file "to" does not exist, create the Nachos file 
+//         "to" with lengh 0, then append the contents of Nachos file 
 //         "from" to the end of it.
 //----------------------------------------------------------------------
 
@@ -178,9 +193,20 @@ NAppend(char *from, char *to)
     OpenFile* openFileTo;
     int amountRead, fileLength;
     char *buffer;
+    // struct stat fileState;
+    bool isExit = true;
+    time_t fromTime;
 
     //  start position for appending
     int start;
+
+    // get last edit time of UNIX file
+    // int result = stat(from, &fileState);
+    // if (result == 0) {
+    //     printf("last edit time of UNIX file: %ld\n", fileState.st_mtim);
+    // } else {
+    //     printf("Wrong: last edit time of UNIX file\n");
+    // }
 
     if (!strncmp(from, to, FileNameMaxLen))
     {
@@ -197,6 +223,7 @@ NAppend(char *from, char *to)
     }
 
     fileLength = openFileFrom->Length();
+    fromTime = openFileFrom->GetTime();
     if (fileLength == 0) 
     {
 	printf("NAppend: nothing to append from file %s\n", from);
@@ -205,8 +232,10 @@ NAppend(char *from, char *to)
 	 
     if ( (openFileTo = fileSystem->Open(to)) == NULL)
     {
+        isExit = false;
+        printf("------------------isExit = false;\n");
 	// file "to" does not exits, then create one
-	if (!fileSystem->Create(to, 0)) 
+	if (!fileSystem->CopyCreate(to, 0, fromTime)) 
 	{
 	    printf("Append: couldn't create the file %s to append\n", to);
 	    delete openFileFrom;
@@ -226,19 +255,26 @@ NAppend(char *from, char *to)
     while ( (amountRead = openFileFrom->Read(buffer, TransferSize)) > 0) 
     {
         int result;
-//	printf("start value: %d,  amountRead %d, ", start, amountRead);
-//	result = openFile->WriteAt(buffer, amountRead, start);
+	// printf("start value: %d,  amountRead %d, ", start, amountRead);
+	// result = openFileTo->WriteAt(buffer, amountRead, start);
 	result = openFileTo->Write(buffer, amountRead);
-//	printf("result of write: %d\n", result);
+	printf("result of write: %d\n", result);
 	ASSERT(result == amountRead);
-//	start += amountRead;
-//	ASSERT(start == openFile->Length());
+	// start += amountRead;
+	// ASSERT(start == openFileTo->Length());
     }
     delete [] buffer;
 
-// Write the inode back to the disk, because we have changed it
-   openFileTo->WriteBack();
-   printf("inodes have been written back\n");
+//  Write the inode back to the disk, because we have changed it
+    if (!isExit) {
+        openFileTo->WriteBackWithoutTime();
+        printf("-------------------not exist\n");
+    } else {
+        openFileTo->WriteBack();
+        printf("-------------------exist\n");
+    }
+  
+  printf("inodes have been written back\n");
     
 // Close both Nachos files
     delete openFileTo;
@@ -275,6 +311,34 @@ Print(char *name)
     return;
 }
 
+// TODO: 全部普通文件占用的空间大小（不包括文件头占用的，但加上普通文件数据扇区的内碎片）
+// TODO: 总内碎片字节数（仅计普通文件数据扇区造成的）
+
+void PrintDetail() {
+    int totalDiskSize = SectorSize * NumSectors;
+    printf("Nachos磁盘的总大小: %d字节\n", totalDiskSize);
+    BitMap *freeMap = new BitMap(NumSectors);
+    OpenFile* freeMapFile = new OpenFile(0); // #define FreeMapSector 		0
+    freeMap->FetchFrom(freeMapFile);
+    int freeSectors = freeMap->NumClear();
+    int freeBytes = freeSectors * SectorSize;
+    // printf("freeMap->NumClear(): %d\n", freeSectors);
+    printf("已使用空间大小: %d字节\n", totalDiskSize - freeBytes);
+    printf("空闲空间大小: %d字节\n", freeBytes);
+
+    Directory *directory = new Directory(10);
+    OpenFile* directoryFile = new OpenFile(1); // #define DirectorySector 	1
+    directory->FetchFrom(directoryFile);
+    int fileCount = directory->GetFileNum();
+    int fileBytes = directory->GetFileBytes();
+    int fileSectors = directory->GetFileSectorsNum();
+    printf("普通文件数目为: %d个\n", fileCount);
+    printf("全部普通文件的总字节数为: %d字节\n", fileBytes);
+    printf("全部普通文件占用的空间大小为: %d个扇区\n", fileSectors);
+    int fragmentBytes = fileSectors * SectorSize - fileBytes;
+    printf("总内碎片字节数为: %d字节\n", fragmentBytes);
+}
+
 //----------------------------------------------------------------------
 // PerformanceTest
 // 	Stress the Nachos file system by creating a large file, writing
@@ -287,10 +351,10 @@ Print(char *name)
 //	  PerformanceTest -- overall control, and print out performance #'s
 //----------------------------------------------------------------------
 
-#define FileName 	"TestFile"
-#define Contents 	"1234567890"
+#define FileName 	(char *)"TestFile"
+#define Contents 	(char *)"1234567890"
 #define ContentSize 	strlen(Contents)
-#define FileSize 	((int)(ContentSize * 5000))
+#define FileSize 	((int)(ContentSize * 100))
 
 static void 
 FileWrite()
@@ -317,6 +381,11 @@ FileWrite()
 	    return;
 	}
     }
+
+//  Write the inode back to the disk, because we have changed it
+//  openFile->WriteBack();
+//  printf("inodes have been written back\n");
+    
     delete openFile;	// close file
 }
 

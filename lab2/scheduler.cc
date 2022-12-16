@@ -56,13 +56,7 @@ Scheduler::ReadyToRun (Thread *thread)
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
     thread->setStatus(READY);
-//    readyList->Append((void *)thread);
-    //通过优先级排序并插入,等待调入
-    readyList->SortedInsert(thread, thread->get_priority());
-    //如果是抢占的则需要重新竞争,否则直接插队排入即可
-//    if (thread != currentThread && thread->get_priority() > currentThread->get_priority()) {
-//        currentThread->Yield();
-//    }
+    readyList->SortedInsert((void*)thread, thread->getpriority());
 }
 
 //----------------------------------------------------------------------
