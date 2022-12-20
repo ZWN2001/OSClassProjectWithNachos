@@ -79,11 +79,13 @@ class Thread {
     // NOTE: DO NOT CHANGE the order of these first two members.
     // THEY MUST be in this position for SWITCH to work.
     int* stackTop;			 // the current stack pointer
+    
     _int machineState[MachineStateSize];  // all registers except for stackTop
-
+    int priority=9;
   public:
     Thread(const char* debugName);		// initialize a Thread 
-    Thread(const char* debugName, int priority);
+       
+Thread(const char* debugName, int priority);
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -102,6 +104,11 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
+
+//set priorty
+    int getPriority();
+    void setPriority(int priority);
+
     void Print() { printf("%s, ", name); }
 
   private:
@@ -112,7 +119,6 @@ class Thread {
 					// (If NULL, don't deallocate stack)
     ThreadStatus status;		// ready, running or blocked
     char* name;
-
     void StackAllocate(VoidFunctionPtr func, _int arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()

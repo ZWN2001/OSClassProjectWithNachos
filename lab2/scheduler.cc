@@ -53,10 +53,11 @@ Scheduler::~Scheduler()
 void
 Scheduler::ReadyToRun (Thread *thread)
 {
-    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
+    DEBUG('t', "Putting thread %s on ready list.\n", thread->getName(),thread->getPriority());
 
     thread->setStatus(READY);
-    readyList->SortedInsert((void*)thread, thread->getpriority());
+   
+    readyList->SortedInsert(thread, thread->getPriority());
 }
 
 //----------------------------------------------------------------------
@@ -70,7 +71,12 @@ Scheduler::ReadyToRun (Thread *thread)
 Thread *
 Scheduler::FindNextToRun ()
 {
-    return (Thread *)readyList->Remove();
+//   Thread *thread = (Thread *)readyList->Remove();
+//    if(thread->getPriority()>0){
+//thread->setPriority(thread->getPriority()+1);
+//}
+ return (Thread *)readyList->Remove();
+
 }
 
 //----------------------------------------------------------------------
@@ -102,6 +108,8 @@ Scheduler::Run (Thread *nextThread)
     oldThread->CheckOverflow();		    // check if the old thread
 					    // had an undetected stack overflow
 
+    oldThread->setPriority(oldThread->getPriority()+1);//CHANGE
+
     currentThread = nextThread;		    // switch to the next thread
     currentThread->setStatus(RUNNING);      // nextThread is now running
     
@@ -112,7 +120,7 @@ Scheduler::Run (Thread *nextThread)
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
-
+    
     SWITCH(oldThread, nextThread);
     
     DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());

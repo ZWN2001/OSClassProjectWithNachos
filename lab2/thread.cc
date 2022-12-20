@@ -31,33 +31,48 @@
 //
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
-Thread::Thread(const char* threadName, int threadpriority) {
-    name = (char*)threadName;
-    stackTop = NULL;
-    stack = NULL;
-    status = JUST_CREATED;
-    if (threadpriority > 99)
-        priority = 99;
-    else if (threadpriority < 0)
-        priority = 0;
-    else
-        priority = threadpriority;
-#ifndef USER_PROGRAM
-    space = NULL;
-#endif // !USER_PROGRAM
 
-}
 Thread::Thread(const char* threadName)
 {
     name = (char*)threadName;
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-    priority = 9;
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
 }
+//We want to use youxianji
+Thread::Thread(const char*threadName,int priority)
+{
+    name = (char*)threadName;
+    if(priority>99){
+        this->priority=99;
+    } else if(priority<0){
+        this->priority = 0;
+    } else{
+        this->priority = priority;
+    }
+
+    stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+#ifdef USER_PROGRAM
+    space = NULL;
+#endif
+
+}
+
+
+int Thread::getPriority(){
+    return this->priority;
+}
+void Thread::setPriority(int priority){
+    this->priority = priority;
+}
+
+
+
 
 //----------------------------------------------------------------------
 // Thread::~Thread
@@ -202,8 +217,9 @@ Thread::Yield ()
     
     DEBUG('t', "Yielding thread \"%s\"\n", getName());
     scheduler->ReadyToRun(this);
-    if (nextThread != NULL) {
     nextThread = scheduler->FindNextToRun();
+    if (nextThread != NULL) {
+
 	scheduler->Run(nextThread);
     }
     (void) interrupt->SetLevel(oldLevel);

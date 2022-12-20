@@ -25,18 +25,14 @@ void
 SimpleThread(_int which)
 {
     int num;
-    int priority;
-    priority = currentThread->getpriority();
-
+    
     for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d times,priority is %d\n", (int) which, num,priority);
-    if (num < 4) {
-        currentThread->Yield();
-    }
-    else
-    {
-        currentThread->Finish();
-    }
+        printf("*** thread %d looped %d times prority is %d\n", (int) which, num, (int) currentThread->getPriority());
+        if (num < 4) {
+            currentThread->Yield();
+        } else {
+            currentThread->Finish();
+        }
     }
 }
 

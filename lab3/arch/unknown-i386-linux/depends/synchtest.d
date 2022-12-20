@@ -2,4 +2,4 @@ arch/unknown-i386-linux/depends/synchtest.d arch/unknown-i386-linux/objects/sync
  ../threads/system.h ../threads/utility.h ../threads/bool.h \
  ../machine/sysdep.h ../threads/thread.h ../threads/scheduler.h \
  ../threads/list.h ../machine/interrupt.h ../machine/stats.h \
- ../machine/timer.h ../threads/synch.h
+ ../machine/timer.h ../lab3/synch.h
