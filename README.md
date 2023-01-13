@@ -5,6 +5,10 @@ tags: 操作系统
 category: 学习
 ---
 
+山东大学2022操作系统课程设计
+
+你可以直接看这份文档 https://www.zwn-blog.xyz/2023/01/09/OS%E8%AF%BE%E8%AE%BE/
+
 # OS课设
 
 ## 环境配置
@@ -13,7 +17,7 @@ category: 学习
 
 在apt install前，确认你的虚拟机网络可用。
 
-关于虚拟机的网络配置，我参考了https://zhuanlan.zhihu.com/p/130984945，整个教程我也复制整理了一遍放在文末。
+关于虚拟机的网络配置，我参考了https://zhuanlan.zhihu.com/p/130984945 ，整个教程我也复制整理了一遍放在文末。
 
 ## Linux下使用CLion进行Debug
 
