@@ -7,7 +7,7 @@ category: 学习
 
 山东大学2022操作系统课程设计
 
-你可以直接看这份文档 https://www.zwn-blog.xyz/2023/01/09/OS%E8%AF%BE%E8%AE%BE/
+你可以直接看这份文档 https://www.zwn2001.space/posts/OS课设/
 
 # OS课设
 
